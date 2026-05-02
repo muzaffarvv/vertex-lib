@@ -1,9 +1,5 @@
 package uz.vv.vertexlib.exceptions;
 
-/**
- * Resurs (entity) bazada topilmagan holatlarda tashlanadi.
- * HTTP 404 Not Found qaytaradi.
- */
 public class ResourceNotFoundException extends BaseException {
 
     public ResourceNotFoundException(String message) {

@@ -15,10 +15,6 @@ import uz.vv.vertexlib.repositories.UserRepository;
 
 import java.util.List;
 
-/**
- * Foydalanuvchilarni boshqarish xizmati.
- * Parollar BCrypt bilan shifrlangan holda saqlanadi.
- */
 @Service
 @RequiredArgsConstructor
 public class UserService implements BaseService<UserRequest, UserResponse, String> {
@@ -26,8 +22,6 @@ public class UserService implements BaseService<UserRequest, UserResponse, Strin
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
-
-    // ── CRUD ──────────────────────────────────────────────────────────────────
 
     @Override
     @Transactional
@@ -48,7 +42,6 @@ public class UserService implements BaseService<UserRequest, UserResponse, Strin
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Foydalanuvchi", "id", id));
 
-        // Telefon raqami o'zgargan bo'lsa, yangi raqam band emasligini tekshirish
         if (!user.getPhoneNumber().equals(request.phoneNumber()) &&
                 userRepository.existsByPhoneNumber(request.phoneNumber())) {
             throw new AlreadyExistsException("Foydalanuvchi", "telefon raqami", request.phoneNumber());
@@ -58,7 +51,6 @@ public class UserService implements BaseService<UserRequest, UserResponse, Strin
         user.setPhoneNumber(request.phoneNumber());
         user.setRole(request.role());
 
-        // Parol faqat yuborilgan bo'lsa yangilanadi (blank bo'lmasa)
         if (request.password() != null && !request.password().isBlank()) {
             user.setPassword(passwordEncoder.encode(request.password()));
         }
@@ -84,7 +76,7 @@ public class UserService implements BaseService<UserRequest, UserResponse, Strin
     }
 
     @Transactional(readOnly = true)
-    public List<UserResponse> getAll() {
+    public List<UserResponse> getAll() { // todo page
         return userRepository.findAll().stream()
                 .map(userMapper::toResponse)
                 .toList();

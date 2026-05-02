@@ -1,9 +1,5 @@
 package uz.vv.vertexlib.exceptions;
 
-/**
- * Unique constraint buzilganda tashlanadi (telefon raqami, ISBN va h.k).
- * HTTP 409 Conflict qaytaradi.
- */
 public class AlreadyExistsException extends BaseException {
 
     public AlreadyExistsException(String message) {

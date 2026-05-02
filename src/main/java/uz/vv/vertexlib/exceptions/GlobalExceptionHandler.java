@@ -11,14 +11,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.stream.Collectors;
 
-/**
- * Barcha exception-larni ushlab, standartlashtirilgan JSON formatida qaytaradi.
- * Foydalanuvchi doim bir xil strukturali xato javobi oladi.
- */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
-    // ── Custom BaseException subclass-lar ────────────────────────────────────
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex) {
@@ -48,12 +42,6 @@ public class GlobalExceptionHandler {
                 .body(ErrorResponse.of(422, ex.getMessage(), "Yetarli nusxa yo'q"));
     }
 
-    // ── Spring Validation xatolari ────────────────────────────────────────────
-
-    /**
-     * @Valid yoki @Validated annotatsiyasi ishlamagan holda field-level xatoliklarni qaytaradi.
-     * details fieldida barcha field xatoliklari birlashtiriladi.
-     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
         String details = ex.getBindingResult()
@@ -66,8 +54,6 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ErrorResponse.of(400, "Validatsiya xatosi", details));
     }
-
-    // ── Spring Security xatolari ──────────────────────────────────────────────
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
@@ -82,8 +68,6 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.UNAUTHORIZED)
                 .body(ErrorResponse.of(401, "Telefon raqami yoki parol noto'g'ri", ex.getMessage()));
     }
-
-    // ── Fallback handler ──────────────────────────────────────────────────────
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneral(Exception ex) {
