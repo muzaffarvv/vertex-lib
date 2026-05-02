@@ -10,8 +10,9 @@ import uz.vv.vertexlib.base.BaseEntity;
 @Table(name = "genres")
 public class Genres extends BaseEntity { // kutubxona bor kitoblaring janrlari
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = false, length = 60)
     private String name;
 
+    @Column(length = 132)
     private String description;
 }

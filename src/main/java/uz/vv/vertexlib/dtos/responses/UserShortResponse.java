@@ -5,4 +5,5 @@ import uz.vv.vertexlib.enums.UserRole;
 public record UserShortResponse(
         String id,
         String fullName,
-        UserRole role) {}
+        UserRole role
+) {}
