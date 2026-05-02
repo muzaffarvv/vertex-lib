@@ -9,4 +9,5 @@ import java.util.Optional;
 @Repository
 public interface GenreRepository extends BaseRepository<Genres> {
     Optional<Genres> findByName(String name);
-}
+    boolean existsByName(String name);
+}
