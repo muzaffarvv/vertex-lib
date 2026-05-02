@@ -11,10 +11,6 @@ import javax.crypto.SecretKey;
 import java.util.Base64;
 import java.util.Date;
 
-/**
- * JWT token yaratish, parse qilish va validatsiya qilish uchun utility sinf.
- * JJWT 0.12.x API ishlatiladi.
- */
 @Component
 public class JwtUtil {
 
@@ -24,11 +20,6 @@ public class JwtUtil {
     @Value("${jwt.expiration}")
     private long expirationMs;
 
-    // ── Token yaratish ────────────────────────────────────────────────────────
-
-    /**
-     * UserDetails (phone number = username) asosida JWT token yaratadi.
-     */
     public String generateToken(UserDetails userDetails) {
         return Jwts.builder()
                 .subject(userDetails.getUsername())
@@ -38,8 +29,6 @@ public class JwtUtil {
                 .compact();
     }
 
-    // ── Token o'qish ──────────────────────────────────────────────────────────
-
     public String extractUsername(String token) {
         return extractAllClaims(token).getSubject();
     }
@@ -47,8 +36,6 @@ public class JwtUtil {
     public Date extractExpiration(String token) {
         return extractAllClaims(token).getExpiration();
     }
-
-    // ── Validatsiya ───────────────────────────────────────────────────────────
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
@@ -58,8 +45,6 @@ public class JwtUtil {
     private boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
-
-    // ── Ichki yordamchilar ────────────────────────────────────────────────────
 
     private Claims extractAllClaims(String token) {
         return Jwts.parser()

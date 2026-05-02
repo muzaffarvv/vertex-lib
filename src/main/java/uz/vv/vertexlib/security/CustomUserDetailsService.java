@@ -11,20 +11,12 @@ import uz.vv.vertexlib.repositories.UserRepository;
 
 import java.util.List;
 
-/**
- * Spring Security-ning UserDetailsService implementatsiyasi.
- * Login uchun username sifatida telefon raqami ishlatiladi.
- */
 @Service
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
 
-    /**
-     * @param phoneNumber login uchun username (telefon raqami)
-     * @throws UsernameNotFoundException foydalanuvchi topilmasa
-     */
     @Override
     public UserDetails loadUserByUsername(String phoneNumber) throws UsernameNotFoundException {
         User user = userRepository.findByPhoneNumber(phoneNumber)
@@ -32,7 +24,6 @@ public class CustomUserDetailsService implements UserDetailsService {
                         "Foydalanuvchi topilmadi: " + phoneNumber
                 ));
 
-        // Spring Security ROLE_ prefix kutadi
         return org.springframework.security.core.userdetails.User.builder()
                 .username(user.getPhoneNumber())
                 .password(user.getPassword())
