@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kitoblar — VertexLib</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: layout('Kitoblar', ~{::section})}">
+<section>
+
+<!-- BOOKS LIST -->
+<div class="flex justify-between items-center mb-4">
+  <div class="search-bar" style="margin:0; flex:1; max-width:380px">
+    <input class="search-input" id="searchInput" placeholder="Kitob nomi yoki muallif..." oninput="filterBooks(this.value)">
+  </div>
+  <button class="btn btn-primary staff-only" onclick="openModal('createModal')" id="addBtn" style="display:none">+ Kitob qo'shish</button>
+</div>
+
+<div class="card">
+  <div id="booksTable"><div class="loading"><div class="spinner"></div>Yuklanmoqda...</div></div>
+  <div class="card-body" style="padding-top:0">
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+
+<!-- CREATE MODAL -->
+<div class="modal-overlay" id="createModal">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title">Yangi kitob qo'shish</span>
+      <button class="modal-close" onclick="closeModal('createModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="createAlert"></div>
+      <div class="form-grid">
+        <div class="field span-2">
+          <label>Kitob nomi *</label>
+          <input type="text" id="c_title" maxlength="172" placeholder="Kitob nomini kiriting">
+        </div>
+        <div class="field">
+          <label>ISBN *</label>
+          <input type="text" id="c_isbn" placeholder="9781234567890" minlength="13" maxlength="17">
+        </div>
+        <div class="field">
+          <label>Muallif *</label>
+          <input type="text" id="c_author" maxlength="132" placeholder="Ism Familiya">
+        </div>
+        <div class="field">
+          <label>Janr *</label>
+          <select id="c_genreId"><option value="">Tanlang...</option></select>
+        </div>
+        <div class="field">
+          <label>Nashr yili *</label>
+          <input type="number" id="c_year" min="1000" max="2026" placeholder="2024">
+        </div>
+        <div class="field">
+          <label>Jami nusxalar *</label>
+          <input type="number" id="c_copies" min="0" placeholder="1">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('createModal')">Bekor qilish</button>
+      <button class="btn btn-primary" onclick="createBook()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MODAL (PATCH /details) -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title">Kitobni tahrirlash</span>
+      <button class="modal-close" onclick="closeModal('editModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="editAlert"></div>
+      <div class="form-grid">
+        <div class="field span-2">
+          <label>Kitob nomi</label>
+          <input type="text" id="e_title" maxlength="172">
+        </div>
+        <div class="field">
+          <label>Muallif</label>
+          <input type="text" id="e_author" maxlength="132">
+        </div>
+        <div class="field">
+          <label>Janr</label>
+          <select id="e_genreId"><option value="">O'zgartirmaslik</option></select>
+        </div>
+        <div class="field">
+          <label>Nashr yili</label>
+          <input type="number" id="e_year" min="1000" max="2026">
+        </div>
+        <div class="field">
+          <label>Jami nusxalar</label>
+          <input type="number" id="e_copies" min="0">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('editModal')">Bekor qilish</button>
+      <button class="btn btn-primary" onclick="updateBook()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-head">
+      <span class="modal-title">Kitobni o'chirish</span>
+      <button class="modal-close" onclick="closeModal('deleteModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:0.9rem;color:var(--muted)">
+        <strong style="color:var(--text)" id="deleteBookName"></strong> kitobini o'chirmoqchimisiz? Bu amal qaytarilmaydi.
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('deleteModal')">Bekor qilish</button>
+      <button class="btn btn-danger" onclick="deleteBook()">O'chirish</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.getElementById('topbarTitle').textContent = 'Kitoblar';
+  document.getElementById('topbarSub').textContent = 'Kutubxona katalogi';
+  document.getElementById('nav-books')?.classList.add('active');
+
+  const isStaff = currentUser && (currentUser.role === 'STAFF' || currentUser.role === 'ADMIN');
+  if (isStaff) document.getElementById('addBtn').style.display = '';
+
+  let state = { page: 0, size: 15, total: 0, books: [], genres: [] };
+  let editingId = null, deletingId = null;
+
+  // ── LOAD ────────────────────────────────────────────────
+  async function loadGenres() {
+    const res = await api('GET', '/api/v1/genres?size=200');
+    if (res && res.ok) {
+      state.genres = (await res.json()).content || [];
+      ['c_genreId', 'e_genreId'].forEach(id => {
+        const sel = document.getElementById(id);
+        const first = sel.options[0].outerHTML;
+        sel.innerHTML = first + state.genres.map(g =>
+          `<option value="${g.id}">${esc(g.name)}</option>`).join('');
+      });
+    }
+  }
+
+  async function loadBooks() {
+    document.getElementById('booksTable').innerHTML = '<div class="loading"><div class="spinner"></div>Yuklanmoqda...</div>';
+    const res = await api('GET', `/api/v1/books?page=${state.page}&size=${state.size}&sort=id,desc`);
+    if (!res || !res.ok) { document.getElementById('booksTable').innerHTML = '<div class="empty"><div class="empty-icon">⚠</div>Xatolik yuz berdi</div>'; return; }
+    const data = await res.json();
+    state.total = data.totalElements || 0;
+    state.books = data.content || [];
+    renderTable();
+    renderPagination(data.totalPages || 1);
+  }
+
+  function renderTable() {
+    if (!state.books.length) {
+      document.getElementById('booksTable').innerHTML = '<div class="empty"><div class="empty-icon">📚</div>Kitoblar topilmadi</div>';
+      return;
+    }
+    document.getElementById('booksTable').innerHTML = `
+      <table>
+        <thead><tr>
+          <th>Nomi</th><th>Muallif</th><th>ISBN</th><th>Janr</th><th>Yil</th><th>Nusxa</th>${isStaff ? '<th>Amallar</th>' : ''}
+        </tr></thead>
+        <tbody>
+          ${state.books.map(b => `
+            <tr>
+              <td style="font-weight:500">${esc(b.title)}</td>
+              <td class="text-muted mono">${esc(b.author)}</td>
+              <td class="mono text-muted" style="font-size:0.78rem">${esc(b.isbn)}</td>
+              <td><span class="badge badge-blue">${esc(b.genre?.name || '—')}</span></td>
+              <td class="mono text-muted">${b.publishedYear || '—'}</td>
+              <td><span class="badge ${b.availableCopies > 0 ? 'badge-green' : 'badge-red'}">${b.availableCopies}/${b.totalCopies}</span></td>
+              ${isStaff ? `<td>
+                <div class="flex gap-2">
+                  <button class="btn btn-ghost btn-sm" onclick="openEdit('${b.id}')">Tahrirlash</button>
+                  <button class="btn btn-danger btn-sm" onclick="openDelete('${b.id}', '${esc(b.title).replace(/'/g,"\\'")}')">O'chirish</button>
+                </div>
+              </td>` : ''}
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  let searchTimeout;
+  let searchQuery = '';
+  function filterBooks(q) {
+    clearTimeout(searchTimeout);
+    searchQuery = q;
+    // Client-side filter on current page; for full search, backend search endpoint needed
+    searchTimeout = setTimeout(() => {
+      const filtered = q
+        ? state.books.filter(b =>
+            b.title?.toLowerCase().includes(q.toLowerCase()) ||
+            b.author?.toLowerCase().includes(q.toLowerCase()))
+        : state.books;
+      renderFilteredTable(filtered);
+    }, 200);
+  }
+
+  function renderFilteredTable(books) {
+    if (!books.length) {
+      document.getElementById('booksTable').innerHTML = '<div class="empty"><div class="empty-icon">🔍</div>Hech narsa topilmadi</div>';
+      return;
+    }
+    state.books = books; // temp replace for renderTable
+    renderTable();
+  }
+
+  // ── PAGINATION ───────────────────────────────────────────
+  function renderPagination(total) {
+    const p = document.getElementById('pagination');
+    if (total <= 1) { p.innerHTML = ''; return; }
+    let html = `<button onclick="goPage(${state.page - 1})" ${state.page === 0 ? 'disabled' : ''}>← Oldingi</button>`;
+    const start = Math.max(0, state.page - 2);
+    const end = Math.min(total - 1, state.page + 2);
+    for (let i = start; i <= end; i++) {
+      html += `<button class="${i === state.page ? 'active' : ''}" onclick="goPage(${i})">${i + 1}</button>`;
+    }
+    html += `<button onclick="goPage(${state.page + 1})" ${state.page >= total - 1 ? 'disabled' : ''}>Keyingi →</button>`;
+    html += `<span class="info">Jami: ${state.total}</span>`;
+    p.innerHTML = html;
+  }
+
+  function goPage(p) { state.page = p; loadBooks(); }
+
+  // ── CREATE ───────────────────────────────────────────────
+  async function createBook() {
+    const body = {
+      title: document.getElementById('c_title').value.trim(),
+      isbn: document.getElementById('c_isbn').value.trim(),
+      author: document.getElementById('c_author').value.trim(),
+      genreId: document.getElementById('c_genreId').value,
+      publishedYear: parseInt(document.getElementById('c_year').value) || null,
+      totalCopies: parseInt(document.getElementById('c_copies').value) ?? 0
+    };
+
+    if (!body.title || !body.isbn || !body.author || !body.genreId) {
+      document.getElementById('createAlert').innerHTML = '<div class="alert alert-error">Barcha majburiy maydonlarni to\'ldiring</div>';
+      return;
+    }
+
+    const res = await api('POST', '/api/v1/books', body);
+    if (!res) return;
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      document.getElementById('createAlert').innerHTML = `<div class="alert alert-error">${err.message || 'Xatolik yuz berdi'}</div>`;
+      return;
+    }
+    closeModal('createModal');
+    toast('Kitob muvaffaqiyatli qo\'shildi');
+    clearCreateForm();
+    loadBooks();
+  }
+
+  function clearCreateForm() {
+    ['c_title','c_isbn','c_author','c_year','c_copies'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('c_genreId').value = '';
+    document.getElementById('createAlert').innerHTML = '';
+  }
+
+  // ── EDIT ─────────────────────────────────────────────────
+  function openEdit(id) {
+    const book = state.books.find(b => b.id === id);
+    if (!book) return;
+    editingId = id;
+    document.getElementById('e_title').value = book.title || '';
+    document.getElementById('e_author').value = book.author || '';
+    document.getElementById('e_genreId').value = book.genre?.id || '';
+    document.getElementById('e_year').value = book.publishedYear || '';
+    document.getElementById('e_copies').value = book.totalCopies ?? '';
+    document.getElementById('editAlert').innerHTML = '';
+    openModal('editModal');
+  }
+
+  async function updateBook() {
+    const body = {};
+    const title = document.getElementById('e_title').value.trim();
+    const author = document.getElementById('e_author').value.trim();
+    const genreId = document.getElementById('e_genreId').value;
+    const year = document.getElementById('e_year').value;
+    const copies = document.getElementById('e_copies').value;
+
+    if (title) body.title = title;
+    if (author) body.author = author;
+    if (genreId) body.genreId = genreId;
+    if (year) body.publishedYear = parseInt(year);
+    if (copies !== '') body.totalCopies = parseInt(copies);
+
+    const res = await api('PATCH', `/api/v1/books/${editingId}/details`, body);
+    if (!res) return;
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      document.getElementById('editAlert').innerHTML = `<div class="alert alert-error">${err.message || 'Xatolik yuz berdi'}</div>`;
+      return;
+    }
+    closeModal('editModal');
+    toast('Kitob yangilandi');
+    loadBooks();
+  }
+
+  // ── DELETE ───────────────────────────────────────────────
+  function openDelete(id, name) {
+    deletingId = id;
+    document.getElementById('deleteBookName').textContent = name;
+    openModal('deleteModal');
+  }
+
+  async function deleteBook() {
+    const res = await api('DELETE', `/api/v1/books/${deletingId}`);
+    closeModal('deleteModal');
+    toast('Kitob o\'chirildi', 'error');
+    loadBooks();
+  }
+
+  function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  loadGenres();
+  loadBooks();
+</script>
+</section>
+</div>
+
+</body>
+</html>
