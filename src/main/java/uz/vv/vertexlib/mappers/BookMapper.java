@@ -11,7 +11,7 @@ import uz.vv.vertexlib.entities.Book;
 public interface BookMapper {
 
     @Mapping(target = "genre.id", source = "genreId")
-    @Mapping(target = "availableCopies", source = "totalCopies") // Yangi kitobda barcha nusxalar mavjud deb olinadi
+    @Mapping(target = "availableCopies", source = "totalCopies")
     Book toEntity(BookCreateRequest request);
 
     BookResponse toResponse(Book book);

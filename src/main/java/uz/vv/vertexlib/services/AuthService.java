@@ -19,11 +19,6 @@ import uz.vv.vertexlib.mappers.UserMapper;
 import uz.vv.vertexlib.repositories.UserRepository;
 import uz.vv.vertexlib.security.JwtUtil;
 
-/**
- * Autentifikatsiya va ro'yxatdan o'tish biznes mantiqi.
- * Login: telefon + parol → JWT token.
- * Register: yangi MEMBER foydalanuvchi yaratish → JWT token.
- */
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -35,12 +30,6 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailsService;
 
-    // ── Register ──────────────────────────────────────────────────────────────
-
-    /**
-     * Yangi foydalanuvchini MEMBER roli bilan ro'yxatdan o'tkazadi.
-     * Telefon raqami band bo'lsa {@link AlreadyExistsException} tashlanadi.
-     */
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByPhoneNumber(request.phoneNumber())) {
@@ -51,26 +40,18 @@ public class AuthService {
         user.setFullName(request.fullName());
         user.setPhoneNumber(request.phoneNumber());
         user.setPassword(passwordEncoder.encode(request.password()));
-        user.setRole(UserRole.MEMBER); // Register orqali faqat MEMBER bo'lishi mumkin
+        user.setRole(UserRole.MEMBER); 
 
         User savedUser = userRepository.save(user);
         UserResponse userResponse = userMapper.toResponse(savedUser);
 
-        // Token yaratish
         UserDetails userDetails = userDetailsService.loadUserByUsername(savedUser.getPhoneNumber());
         String token = jwtUtil.generateToken(userDetails);
 
         return AuthResponse.of(token, userResponse);
     }
 
-    // ── Login ─────────────────────────────────────────────────────────────────
-
-    /**
-     * Telefon raqami va parol orqali foydalanuvchini autentifikatsiya qiladi.
-     * Noto'g'ri ma'lumotlar kiritilsa Spring Security {@link org.springframework.security.authentication.BadCredentialsException} tashlaydi.
-     */
     public AuthResponse login(LoginRequest request) {
-        // Spring Security AuthenticationManager orqali tekshirish (BCrypt parol solishtiradi)
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.phoneNumber(),
@@ -78,9 +59,8 @@ public class AuthService {
                 )
         );
 
-        // Foydalanuvchini bazadan olib, token yasaymiz
         User user = userRepository.findByPhoneNumber(request.phoneNumber())
-                .orElseThrow(); // authenticate() o'tganidan keyin bu hech qachon bo'lmaydi
+                .orElseThrow(); 
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getPhoneNumber());
         String token = jwtUtil.generateToken(userDetails);
@@ -88,3 +68,4 @@ public class AuthService {
         return AuthResponse.of(token, userMapper.toResponse(user));
     }
 }
+

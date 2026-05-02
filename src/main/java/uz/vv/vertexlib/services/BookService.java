@@ -15,18 +15,12 @@ import uz.vv.vertexlib.repositories.BookRepository;
 
 import java.util.List;
 
-/**
- * Kitoblarni boshqarish xizmati.
- * ISBN unikal bo'lishi shart; yangi kitob qo'shilganda barcha nusxalar mavjud deb hisoblanadi.
- */
 @Service
 @RequiredArgsConstructor
 public class BookService implements BaseService<BookCreateRequest, BookResponse, String> {
 
     private final BookRepository repository;
     private final BookMapper mapper;
-
-    // ── CRUD ──────────────────────────────────────────────────────────────────
 
     @Override
     @Transactional
@@ -38,17 +32,12 @@ public class BookService implements BaseService<BookCreateRequest, BookResponse,
         return mapper.toResponse(repository.save(entity));
     }
 
-    /**
-     * BaseService.update() — BookCreateRequest bilan ishlaydi.
-     * Agar faqat ba'zi maydonlarni yangilash kerak bo'lsa, {@link #updateDetailed} ni ishlating.
-     */
     @Override
     @Transactional
     public BookResponse update(String id, BookCreateRequest request) {
         Book entity = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Kitob", "id", id));
 
-        // ISBN o'zgargan bo'lsa, yangi ISBN band emasligini tekshirish
         if (!entity.getIsbn().equals(request.isbn()) && repository.existsByIsbn(request.isbn())) {
             throw new AlreadyExistsException("Kitob", "ISBN", request.isbn());
         }
@@ -58,15 +47,12 @@ public class BookService implements BaseService<BookCreateRequest, BookResponse,
         entity.setAuthor(request.author());
         entity.setPublishedYear(request.publishedYear());
         entity.setTotalCopies(request.totalCopies());
-        // availableCopies ni oddiy yangilash siyosati: total bilan bir xil qilinadi
+        
         entity.setAvailableCopies(request.totalCopies());
 
         return mapper.toResponse(repository.save(entity));
     }
 
-    /**
-     * Faqat yuborilgan maydonlarni yangilaydigan partial update (PATCH mantiq).
-     */
     @Transactional
     public BookResponse updateDetailed(String id, BookUpdateRequest request) {
         Book entity = repository.findById(id)

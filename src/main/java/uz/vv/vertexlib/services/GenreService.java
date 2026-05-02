@@ -14,10 +14,6 @@ import uz.vv.vertexlib.repositories.GenreRepository;
 
 import java.util.List;
 
-/**
- * Kitob janrlarini boshqarish xizmati.
- * Janr nomi unikal bo'lishi shart.
- */
 @Service
 @RequiredArgsConstructor
 public class GenreService implements BaseService<GenreRequest, GenreResponse, String> {
@@ -25,14 +21,14 @@ public class GenreService implements BaseService<GenreRequest, GenreResponse, St
     private final GenreRepository repository;
     private final GenreMapper mapper;
 
-    // ── CRUD ──────────────────────────────────────────────────────────────────
-
     @Override
     @Transactional
     public GenreResponse create(GenreRequest request) {
+        // Checking if genre name is unique
         if (repository.existsByName(request.name())) {
             throw new AlreadyExistsException("Janr", "nomi", request.name());
         }
+
         Genres entity = mapper.toEntity(request);
         return mapper.toResponse(repository.save(entity));
     }
@@ -40,15 +36,16 @@ public class GenreService implements BaseService<GenreRequest, GenreResponse, St
     @Override
     @Transactional
     public GenreResponse update(String id, GenreRequest request) {
+        // Find existing record or throw exception
         Genres entity = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Janr", "id", id));
 
-        // Nom o'zgargan bo'lsa, yangi nom band emasligini tekshirish
+        // Ensure new name isn't already taken by another genre
         if (!entity.getName().equals(request.name()) && repository.existsByName(request.name())) {
             throw new AlreadyExistsException("Janr", "nomi", request.name());
         }
 
-        mapper.updateEntityFromDto(request, entity);
+        entity.setName(request.name());
         return mapper.toResponse(repository.save(entity));
     }
 
@@ -63,6 +60,7 @@ public class GenreService implements BaseService<GenreRequest, GenreResponse, St
     @Override
     @Transactional
     public void delete(String id) {
+        // TODO: kitoblari mavjud janrni o'chirib yuborish mumkin emas
         if (!repository.existsById(id)) {
             throw new ResourceNotFoundException("Janr", "id", id);
         }
