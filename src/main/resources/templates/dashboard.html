@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — VertexLib</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: layout('Dashboard', ~{::section})}">
+<section>
+
+<div class="stats-row" id="statsRow">
+  <div class="stat-card"><div class="stat-label">Jami kitoblar</div><div class="stat-value accent" id="statBooks">—</div></div>
+  <div class="stat-card"><div class="stat-label">Janrlar</div><div class="stat-value" id="statGenres">—</div></div>
+  <div class="stat-card"><div class="stat-label">Foydalanuvchilar</div><div class="stat-value" id="statUsers">—</div></div>
+  <div class="stat-card"><div class="stat-label">Faol ijaralar</div><div class="stat-value success" id="statLoans">—</div></div>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:20px">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">So'nggi ijaralar</span>
+      <a href="/loans" class="btn btn-ghost btn-sm">Barchasini ko'rish →</a>
+    </div>
+    <div class="card-body" style="padding:0">
+      <div id="recentLoans"><div class="loading"><div class="spinner"></div>Yuklanmoqda...</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">So'nggi kitoblar</span>
+      <a href="/books" class="btn btn-ghost btn-sm">Barchasini ko'rish →</a>
+    </div>
+    <div class="card-body" style="padding:0">
+      <div id="recentBooks"><div class="loading"><div class="spinner"></div>Yuklanmoqda...</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.getElementById('topbarTitle').textContent = 'Dashboard';
+  document.getElementById('topbarSub').textContent = 'Umumiy ko\'rinish';
+  document.getElementById('nav-dashboard').classList.add('active');
+
+  async function loadDashboard() {
+    // Books
+    const bRes = await api('GET', '/api/v1/books?size=5&sort=id,desc');
+    if (bRes && bRes.ok) {
+      const bData = await bRes.json();
+      document.getElementById('statBooks').textContent = bData.totalElements ?? '—';
+      renderRecentBooks(bData.content || []);
+    }
+
+    // Genres
+    const gRes = await api('GET', '/api/v1/genres?size=1');
+    if (gRes && gRes.ok) {
+      const gData = await gRes.json();
+      document.getElementById('statGenres').textContent = gData.totalElements ?? '—';
+    }
+
+    // Only for STAFF
+    const isStaff = currentUser && (currentUser.role === 'STAFF' || currentUser.role === 'ADMIN');
+    if (isStaff) {
+      const uRes = await api('GET', '/api/v1/users?size=1');
+      if (uRes && uRes.ok) {
+        const uData = await uRes.json();
+        document.getElementById('statUsers').textContent = uData.totalElements ?? '—';
+      }
+
+      const lRes = await api('GET', '/api/v1/loans?size=5&sort=id,desc');
+      if (lRes && lRes.ok) {
+        const lData = await lRes.json();
+        document.getElementById('statLoans').textContent = lData.totalElements ?? '—';
+        renderRecentLoans(lData.content || []);
+      }
+    } else {
+      document.getElementById('recentLoans').innerHTML = '<div class="empty"><div class="empty-icon">🔒</div>Faqat xodimlar uchun</div>';
+      document.getElementById('statUsers').textContent = '—';
+      document.getElementById('statLoans').textContent = '—';
+    }
+  }
+
+  function renderRecentBooks(books) {
+    if (!books.length) {
+      document.getElementById('recentBooks').innerHTML = '<div class="empty"><div class="empty-icon">📚</div>Kitoblar yo\'q</div>';
+      return;
+    }
+    document.getElementById('recentBooks').innerHTML = `
+      <table>
+        <thead><tr><th>Nomi</th><th>Muallif</th><th>Nusxa</th></tr></thead>
+        <tbody>
+          ${books.map(b => `
+            <tr>
+              <td><a href="/books/${b.id}" style="color:var(--accent);text-decoration:none">${esc(b.title)}</a></td>
+              <td class="text-muted text-sm">${esc(b.author)}</td>
+              <td><span class="badge ${b.availableCopies > 0 ? 'badge-green' : 'badge-red'}">${b.availableCopies}/${b.totalCopies}</span></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  function renderRecentLoans(loans) {
+    if (!loans.length) {
+      document.getElementById('recentLoans').innerHTML = '<div class="empty"><div class="empty-icon">🔄</div>Ijaralar yo\'q</div>';
+      return;
+    }
+    document.getElementById('recentLoans').innerHTML = `
+      <table>
+        <thead><tr><th>Kitob</th><th>A'zo</th><th>Holat</th></tr></thead>
+        <tbody>
+          ${loans.map(l => {
+            const returned = !!l.returnDate;
+            const overdue = !returned && new Date(l.dueDate) < new Date();
+            const badge = returned ? 'badge-green' : overdue ? 'badge-red' : 'badge-yellow';
+            const status = returned ? 'Qaytarildi' : overdue ? 'Muddati o\'tgan' : 'Faol';
+            return `<tr>
+              <td class="text-sm">${esc(l.book?.title || '—')}</td>
+              <td class="text-muted text-sm">${esc(l.member?.fullName || '—')}</td>
+              <td><span class="badge ${badge}">${status}</span></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  loadDashboard();
+</script>
+</section>
+</div>
+
+</body>
+</html>

@@ -2,6 +2,8 @@ package uz.vv.vertexlib.controllers;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,8 +39,8 @@ public class GenreController {
     }
 
     @GetMapping
-    public ResponseEntity<List<GenreResponse>> getAll() {
-        return ResponseEntity.ok(genreService.getAll());
+    public ResponseEntity<Page<GenreResponse>> getAll(Pageable pageable) {
+        return ResponseEntity.ok(genreService.getAll(pageable));
     }
 
     @DeleteMapping("/{id}")

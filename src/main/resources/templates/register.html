@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VertexLib — Ro'yxatdan o'tish</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d0f14; --surface: #161922; --border: #252933;
+    --accent: #4f8ef7; --text: #e8eaf0; --muted: #6b7280;
+    --danger: #f56565; --success: #48bb78;
+    --mono: 'IBM Plex Mono', monospace; --sans: 'IBM Plex Sans', sans-serif;
+  }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+  .wrap { width: 100%; max-width: 400px; padding: 0 16px; }
+  .logo { font-family: var(--mono); font-size: 1.5rem; font-weight: 600; color: var(--accent); margin-bottom: 8px; }
+  .logo span { color: var(--muted); }
+  .subtitle { font-size: 0.85rem; color: var(--muted); margin-bottom: 40px; font-family: var(--mono); }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 32px; }
+  .field { margin-bottom: 20px; }
+  label { display: block; font-size: 0.75rem; font-family: var(--mono); color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 8px; }
+  input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; color: var(--text); font-family: var(--mono); font-size: 0.9rem; outline: none; transition: border-color 0.15s; }
+  input:focus { border-color: var(--accent); }
+  input.invalid { border-color: var(--danger); }
+  .hint { font-size: 0.75rem; color: var(--muted); margin-top: 5px; font-family: var(--mono); }
+  .btn { width: 100%; background: var(--accent); border: none; border-radius: 6px; padding: 11px; color: #fff; font-family: var(--mono); font-size: 0.9rem; font-weight: 600; cursor: pointer; margin-top: 8px; transition: opacity 0.15s; }
+  .btn:hover { opacity: 0.88; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .alert { border-radius: 6px; padding: 10px 14px; font-size: 0.82rem; margin-top: 16px; display: none; font-family: var(--mono); }
+  .alert.error { background: rgba(245,101,101,0.1); border: 1px solid rgba(245,101,101,0.3); color: var(--danger); }
+  .alert.success { background: rgba(72,187,120,0.1); border: 1px solid rgba(72,187,120,0.3); color: var(--success); }
+  .login-link { text-align: center; margin-top: 20px; font-size: 0.82rem; color: var(--muted); }
+  .login-link a { color: var(--accent); text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo">Vertex<span>Lib</span></div>
+  <div class="subtitle">// yangi a'zo ro'yxatdan o'tish</div>
+
+  <div class="card">
+    <div class="field">
+      <label>To'liq ism</label>
+      <input type="text" id="fullName" placeholder="Ism Familiya" maxlength="132">
+    </div>
+    <div class="field">
+      <label>Telefon raqami</label>
+      <input type="text" id="phone" placeholder="998XXXXXXXXX" maxlength="12">
+      <div class="hint">Format: 998901234567</div>
+    </div>
+    <div class="field">
+      <label>Parol</label>
+      <input type="password" id="password" placeholder="Kamida 8 belgi">
+      <div class="hint">Kamida 1 harf va 1 raqam bo'lishi shart</div>
+    </div>
+    <button class="btn" id="regBtn" onclick="doRegister()">Ro'yxatdan o'tish</button>
+    <div class="alert error" id="errorMsg"></div>
+    <div class="alert success" id="successMsg"></div>
+  </div>
+
+  <div class="login-link">
+    Akkauntingiz bormi? <a href="/login">Kirish</a>
+  </div>
+</div>
+
+<script>
+  async function doRegister() {
+    const fullName = document.getElementById('fullName').value.trim();
+    const phoneNumber = document.getElementById('phone').value.trim();
+    const password = document.getElementById('password').value;
+    const btn = document.getElementById('regBtn');
+
+    hideAlerts();
+
+    if (!fullName || !phoneNumber || !password) {
+      showAlert('error', 'Barcha maydonlarni to\'ldiring');
+      return;
+    }
+
+    if (!/^998[0-9]{9}$/.test(phoneNumber)) {
+      showAlert('error', 'Telefon raqami 998XXXXXXXXX formatida bo\'lishi kerak');
+      return;
+    }
+
+    if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/.test(password)) {
+      showAlert('error', 'Parol kamida 8 belgi, bitta harf va bitta raqam bo\'lishi kerak');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Kutilmoqda...';
+
+    try {
+      const res = await fetch('/api/v1/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fullName, phoneNumber, password })
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        showAlert('error', data.message || 'Ro\'yxatdan o\'tishda xatolik');
+        return;
+      }
+
+      const data = await res.json();
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.uresp));
+      showAlert('success', 'Muvaffaqiyatli ro\'yxatdan o\'tildi! Yo\'naltirilmoqda...');
+      setTimeout(() => window.location.href = '/dashboard', 1200);
+    } catch (e) {
+      showAlert('error', 'Server bilan bog\'lanishda xatolik');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Ro\'yxatdan o\'tish';
+    }
+  }
+
+  function showAlert(type, msg) {
+    const el = document.getElementById(type === 'error' ? 'errorMsg' : 'successMsg');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  function hideAlerts() {
+    document.getElementById('errorMsg').style.display = 'none';
+    document.getElementById('successMsg').style.display = 'none';
+  }
+</script>
+</body>
+</html>

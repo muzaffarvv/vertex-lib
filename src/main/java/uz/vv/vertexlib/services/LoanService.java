@@ -1,6 +1,8 @@
 package uz.vv.vertexlib.services;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.vv.vertexlib.dtos.requests.LoanCreateRequest;
@@ -84,10 +86,9 @@ public class LoanService {
                 .orElseThrow(() -> new ResourceNotFoundException("Ijara", "id", id));
     }
 
-    @Transactional(readOnly = true) // todo pageable
-    public List<LoanResponse> getAll() {
-        return loanRepository.findAll().stream()
-                .map(mapper::toResponse)
-                .toList();
+    @Transactional(readOnly = true)
+    public Page<LoanResponse> getAll(Pageable pageable) {
+        return loanRepository.findAll(pageable)
+                .map(mapper::toResponse);
     }
 }

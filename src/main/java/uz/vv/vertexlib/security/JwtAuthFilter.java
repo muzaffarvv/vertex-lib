@@ -16,10 +16,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
-/**
- * Har bir HTTP so'rovni bir marta ushlab, JWT tokenni tekshiradigan filter.
- * "Authorization: Bearer <token>" header-ini o'qib, SecurityContext-ga authentication qo'yadi.
- */
 @Component
 @RequiredArgsConstructor
 public class JwtAuthFilter extends OncePerRequestFilter {
@@ -36,7 +32,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         final String authHeader = request.getHeader("Authorization");
 
-        // Bearer token mavjud emasligini tekshirish
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
@@ -48,12 +43,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         try {
             phoneNumber = jwtUtil.extractUsername(jwt);
         } catch (Exception e) {
-            // Token parse xatosi — so'rovni davom ettiramiz (autentifikatsiyasiz)
             filterChain.doFilter(request, response);
             return;
         }
 
-        // Foydalanuvchi hali autentifikatsiya qilinmagan bo'lsa tekshiramiz
         if (phoneNumber != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(phoneNumber);
 

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ijaralar — VertexLib</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: layout('Ijaralar', ~{::section})}">
+<section>
+
+<div class="flex justify-between items-center mb-4">
+  <div class="flex gap-2 items-center">
+    <select id="filterStatus" onchange="loadLoans()" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:0.82rem;outline:none">
+      <option value="">Barchasi</option>
+      <option value="active">Faol</option>
+      <option value="overdue">Muddati o'tgan</option>
+      <option value="returned">Qaytarilgan</option>
+    </select>
+  </div>
+  <button class="btn btn-primary" onclick="openModal('createModal')">+ Yangi ijara</button>
+</div>
+
+<div class="card">
+  <div id="loansTable"><div class="loading"><div class="spinner"></div>Yuklanmoqda...</div></div>
+  <div class="card-body" style="padding-top:0">
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+
+<!-- CREATE LOAN -->
+<div class="modal-overlay" id="createModal">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title">Yangi ijara yaratish</span>
+      <button class="modal-close" onclick="closeModal('createModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="createAlert"></div>
+      <div class="form-grid cols-1">
+        <div class="field">
+          <label>Kitob *</label>
+          <select id="c_bookId"><option value="">Tanlang...</option></select>
+        </div>
+        <div class="field">
+          <label>A'zo *</label>
+          <select id="c_memberId"><option value="">Tanlang...</option></select>
+        </div>
+        <div class="field">
+          <label>Xodim *</label>
+          <select id="c_staffId"><option value="">Tanlang...</option></select>
+        </div>
+        <div class="field">
+          <label>Qaytarish sanasi *</label>
+          <input type="datetime-local" id="c_dueDate">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('createModal')">Bekor qilish</button>
+      <button class="btn btn-primary" onclick="createLoan()">Yaratish</button>
+    </div>
+  </div>
+</div>
+
+<!-- RETURN MODAL -->
+<div class="modal-overlay" id="returnModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-head">
+      <span class="modal-title">Kitobni qaytarish</span>
+      <button class="modal-close" onclick="closeModal('returnModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="returnAlert"></div>
+      <p class="text-muted text-sm" style="margin-bottom:16px">Kitob: <strong style="color:var(--text)" id="returnBookName"></strong></p>
+      <div class="form-grid cols-1">
+        <div class="field">
+          <label>Qaytarish sanasi</label>
+          <input type="datetime-local" id="r_returnDate">
+        </div>
+        <div class="field">
+          <label>Jarima (so'm)</label>
+          <input type="number" id="r_fine" min="0" step="0.01" placeholder="0.00">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('returnModal')">Bekor qilish</button>
+      <button class="btn btn-primary" onclick="returnBook()">Qaytarish</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.getElementById('topbarTitle').textContent = 'Ijaralar';
+  document.getElementById('topbarSub').textContent = 'Kitob ijaralari boshqaruvi';
+  document.getElementById('nav-loans')?.classList.add('active');
+
+  // Redirect non-staff
+  if (!currentUser || (currentUser.role !== 'STAFF' && currentUser.role !== 'ADMIN')) {
+    window.location.href = '/dashboard';
+  }
+
+  let state = { page: 0, size: 15, total: 0, loans: [] };
+  let returningId = null;
+
+  async function loadLoans() {
+    document.getElementById('loansTable').innerHTML = '<div class="loading"><div class="spinner"></div>Yuklanmoqda...</div>';
+    const res = await api('GET', `/api/v1/loans?page=${state.page}&size=${state.size}&sort=id,desc`);
+    if (!res || !res.ok) { document.getElementById('loansTable').innerHTML = '<div class="empty"><div class="empty-icon">⚠</div>Xatolik</div>'; return; }
+    const data = await res.json();
+    state.total = data.totalElements || 0;
+
+    // Client-side filter by status
+    const filter = document.getElementById('filterStatus').value;
+    let loans = data.content || [];
+    if (filter === 'active') loans = loans.filter(l => !l.returnDate && new Date(l.dueDate) >= new Date());
+    else if (filter === 'overdue') loans = loans.filter(l => !l.returnDate && new Date(l.dueDate) < new Date());
+    else if (filter === 'returned') loans = loans.filter(l => !!l.returnDate);
+
+    state.loans = loans;
+    renderTable();
+    renderPagination(data.totalPages || 1);
+  }
+
+  function renderTable() {
+    if (!state.loans.length) {
+      document.getElementById('loansTable').innerHTML = '<div class="empty"><div class="empty-icon">🔄</div>Ijaralar topilmadi</div>';
+      return;
+    }
+    document.getElementById('loansTable').innerHTML = `
+      <table>
+        <thead><tr>
+          <th>Kitob</th><th>A'zo</th><th>Xodim</th><th>Ijara sanasi</th><th>Qaytarish</th><th>Holat</th><th>Jarima</th><th>Amal</th>
+        </tr></thead>
+        <tbody>
+          ${state.loans.map(l => {
+            const returned = !!l.returnDate;
+            const overdue = !returned && new Date(l.dueDate) < new Date();
+            const badge = returned ? 'badge-green' : overdue ? 'badge-red' : 'badge-yellow';
+            const status = returned ? 'Qaytarildi' : overdue ? 'Muddati o\'tgan' : 'Faol';
+            return `<tr>
+              <td style="font-weight:500;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(l.book?.title || '—')}</td>
+              <td class="text-sm">${esc(l.member?.fullName || '—')}</td>
+              <td class="text-sm text-muted">${esc(l.staff?.fullName || '—')}</td>
+              <td class="mono text-muted" style="font-size:0.78rem">${fmtDate(l.loanDate)}</td>
+              <td class="mono text-muted" style="font-size:0.78rem">${fmtDate(l.dueDate)}</td>
+              <td><span class="badge ${badge}">${status}</span></td>
+              <td class="mono text-sm">${l.fineAmount ? l.fineAmount.toLocaleString() + ' so\'m' : '—'}</td>
+              <td>
+                ${!returned ? `<button class="btn btn-ghost btn-sm" onclick="openReturn('${l.id}','${esc((l.book?.title||'').replace(/'/g,"\\'"))}')">Qaytarish</button>` : ''}
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  function renderPagination(total) {
+    const p = document.getElementById('pagination');
+    if (total <= 1) { p.innerHTML = ''; return; }
+    let html = `<button onclick="goPage(${state.page-1})" ${state.page===0?'disabled':''}>← Oldingi</button>`;
+    const start = Math.max(0, state.page - 2), end = Math.min(total - 1, state.page + 2);
+    for (let i = start; i <= end; i++) html += `<button class="${i===state.page?'active':''}" onclick="goPage(${i})">${i+1}</button>`;
+    html += `<button onclick="goPage(${state.page+1})" ${state.page>=total-1?'disabled':''}>Keyingi →</button>`;
+    html += `<span class="info">Jami: ${state.total}</span>`;
+    p.innerHTML = html;
+  }
+  function goPage(p) { state.page = p; loadLoans(); }
+
+  // ── LOAD SELECTS ─────────────────────────────────────────
+  async function loadSelects() {
+    // Books (available only)
+    const bRes = await api('GET', '/api/v1/books?size=200');
+    if (bRes && bRes.ok) {
+      const books = ((await bRes.json()).content || []).filter(b => b.availableCopies > 0);
+      const sel = document.getElementById('c_bookId');
+      sel.innerHTML = '<option value="">Tanlang...</option>' +
+        books.map(b => `<option value="${b.id}">${esc(b.title)} (${b.availableCopies} nusxa)</option>`).join('');
+    }
+
+    // Users
+    const uRes = await api('GET', '/api/v1/users?size=200');
+    if (uRes && uRes.ok) {
+      const users = (await uRes.json()).content || [];
+      const members = users.filter(u => u.role === 'MEMBER');
+      const staff = users.filter(u => u.role === 'STAFF' || u.role === 'ADMIN');
+
+      document.getElementById('c_memberId').innerHTML = '<option value="">Tanlang...</option>' +
+        members.map(u => `<option value="${u.id}">${esc(u.fullName)}</option>`).join('');
+
+      document.getElementById('c_staffId').innerHTML = '<option value="">Tanlang...</option>' +
+        staff.map(u => `<option value="${u.id}">${esc(u.fullName)}</option>`).join('');
+    }
+
+    // Default due date = 2 weeks from now
+    const due = new Date(); due.setDate(due.getDate() + 14);
+    document.getElementById('c_dueDate').value = due.toISOString().slice(0,16);
+  }
+
+  async function createLoan() {
+    const bookId = document.getElementById('c_bookId').value;
+    const memberId = document.getElementById('c_memberId').value;
+    const staffId = document.getElementById('c_staffId').value;
+    const dueDate = document.getElementById('c_dueDate').value;
+
+    if (!bookId || !memberId || !staffId || !dueDate) {
+      document.getElementById('createAlert').innerHTML = '<div class="alert alert-error">Barcha maydonlarni to\'ldiring</div>';
+      return;
+    }
+
+    const res = await api('POST', '/api/v1/loans', {
+      bookId, memberId, staffId,
+      dueDate: new Date(dueDate).toISOString()
+    });
+
+    if (!res) return;
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      document.getElementById('createAlert').innerHTML = `<div class="alert alert-error">${err.message || 'Xatolik'}</div>`;
+      return;
+    }
+    closeModal('createModal');
+    document.getElementById('createAlert').innerHTML = '';
+    toast('Ijara yaratildi');
+    loadLoans();
+  }
+
+  function openReturn(id, bookName) {
+    returningId = id;
+    document.getElementById('returnBookName').textContent = bookName;
+    document.getElementById('returnAlert').innerHTML = '';
+    document.getElementById('r_fine').value = '';
+    const now = new Date();
+    document.getElementById('r_returnDate').value = now.toISOString().slice(0,16);
+    openModal('returnModal');
+  }
+
+  async function returnBook() {
+    const returnDate = document.getElementById('r_returnDate').value;
+    const fineAmount = parseFloat(document.getElementById('r_fine').value) || 0;
+
+    const body = {};
+    if (returnDate) body.returnDate = new Date(returnDate).toISOString();
+    if (fineAmount > 0) body.fineAmount = fineAmount;
+
+    const res = await api('PUT', `/api/v1/loans/${returningId}/return`, body);
+    if (!res) return;
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      document.getElementById('returnAlert').innerHTML = `<div class="alert alert-error">${err.message || 'Xatolik'}</div>`;
+      return;
+    }
+    closeModal('returnModal');
+    toast('Kitob qaytarildi', 'success');
+    loadLoans();
+  }
+
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return d.toLocaleDateString('uz-UZ', { day:'2-digit', month:'2-digit', year:'numeric' });
+  }
+  function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  loadSelects();
+  loadLoans();
+</script>
+</section>
+</div>
+</body>
+</html>

@@ -2,6 +2,8 @@ package uz.vv.vertexlib.controllers;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -38,8 +40,8 @@ public class LoanController {
     }
 
     @GetMapping
-    public ResponseEntity<List<LoanResponse>> getAll() {
-        return ResponseEntity.ok(loanService.getAll());
+    public ResponseEntity<Page<LoanResponse>> getAll(Pageable pageable) {
+        return ResponseEntity.ok(loanService.getAll(pageable));
     }
 
     // TODO: faqat o'zining ijaralarini ko'radigan endpoint ham qilish kerak

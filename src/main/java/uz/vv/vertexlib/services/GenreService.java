@@ -1,6 +1,8 @@
 package uz.vv.vertexlib.services;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.vv.vertexlib.base.BaseService;
@@ -24,26 +26,19 @@ public class GenreService implements BaseService<GenreRequest, GenreResponse, St
     @Override
     @Transactional
     public GenreResponse create(GenreRequest request) {
-        // Checking if genre name is unique
-        if (repository.existsByName(request.name())) {
-            throw new AlreadyExistsException("Janr", "nomi", request.name());
-        }
+        if (repository.existsByName(request.name())) throw new AlreadyExistsException("Janr", "nomi", request.name());
 
-        Genres entity = mapper.toEntity(request);
-        return mapper.toResponse(repository.save(entity));
+        return mapper.toResponse(repository.save(mapper.toEntity(request)));
     }
 
     @Override
     @Transactional
     public GenreResponse update(String id, GenreRequest request) {
-        // Find existing record or throw exception
         Genres entity = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Janr", "id", id));
 
-        // Ensure new name isn't already taken by another genre
-        if (!entity.getName().equals(request.name()) && repository.existsByName(request.name())) {
+        if (!entity.getName().equals(request.name()) && repository.existsByName(request.name()))
             throw new AlreadyExistsException("Janr", "nomi", request.name());
-        }
 
         entity.setName(request.name());
         return mapper.toResponse(repository.save(entity));
@@ -68,9 +63,8 @@ public class GenreService implements BaseService<GenreRequest, GenreResponse, St
     }
 
     @Transactional(readOnly = true)
-    public List<GenreResponse> getAll() {
-        return repository.findAll().stream()
-                .map(mapper::toResponse)
-                .toList();
+    public Page<GenreResponse> getAll(Pageable pageable) {
+        return repository.findAll(pageable)
+                .map(mapper::toResponse);
     }
 }

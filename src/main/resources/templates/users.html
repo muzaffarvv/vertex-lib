@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Foydalanuvchilar — VertexLib</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: layout('Foydalanuvchilar', ~{::section})}">
+<section>
+
+<div class="flex justify-between items-center mb-4">
+  <div class="flex gap-2">
+    <select id="filterRole" onchange="loadUsers()" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:0.82rem;outline:none">
+      <option value="">Barchasi</option>
+      <option value="MEMBER">A'zolar</option>
+      <option value="STAFF">Xodimlar</option>
+    </select>
+    <span class="text-muted text-sm" style="align-self:center" id="totalCount"></span>
+  </div>
+  <button class="btn btn-primary" onclick="openCreateModal()">+ Foydalanuvchi qo'shish</button>
+</div>
+
+<div class="card">
+  <div id="usersTable"><div class="loading"><div class="spinner"></div>Yuklanmoqda...</div></div>
+  <div class="card-body" style="padding-top:0">
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+
+<!-- CREATE -->
+<div class="modal-overlay" id="createModal">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title">Yangi foydalanuvchi</span>
+      <button class="modal-close" onclick="closeModal('createModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="createAlert"></div>
+      <div class="form-grid">
+        <div class="field span-2">
+          <label>To'liq ism *</label>
+          <input type="text" id="c_name" maxlength="132" placeholder="Ism Familiya">
+        </div>
+        <div class="field">
+          <label>Telefon raqami *</label>
+          <input type="text" id="c_phone" placeholder="998XXXXXXXXX" maxlength="12">
+        </div>
+        <div class="field">
+          <label>Rol *</label>
+          <select id="c_role">
+            <option value="MEMBER">A'zo (MEMBER)</option>
+            <option value="STAFF">Xodim (STAFF)</option>
+          </select>
+        </div>
+        <div class="field span-2">
+          <label>Parol *</label>
+          <input type="password" id="c_password" placeholder="Kamida 8 belgi, harf+raqam">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('createModal')">Bekor qilish</button>
+      <button class="btn btn-primary" onclick="createUser()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title">Foydalanuvchini tahrirlash</span>
+      <button class="modal-close" onclick="closeModal('editModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="editAlert"></div>
+      <div class="form-grid">
+        <div class="field span-2">
+          <label>To'liq ism *</label>
+          <input type="text" id="e_name" maxlength="132">
+        </div>
+        <div class="field">
+          <label>Telefon raqami *</label>
+          <input type="text" id="e_phone" maxlength="12">
+        </div>
+        <div class="field">
+          <label>Rol *</label>
+          <select id="e_role">
+            <option value="MEMBER">A'zo (MEMBER)</option>
+            <option value="STAFF">Xodim (STAFF)</option>
+          </select>
+        </div>
+        <div class="field span-2">
+          <label>Yangi parol *</label>
+          <input type="password" id="e_password" placeholder="Kamida 8 belgi, harf+raqam">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('editModal')">Bekor qilish</button>
+      <button class="btn btn-primary" onclick="updateUser()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-head">
+      <span class="modal-title">Foydalanuvchini o'chirish</span>
+      <button class="modal-close" onclick="closeModal('deleteModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:0.9rem;color:var(--muted)">
+        <strong style="color:var(--text)" id="deleteUserName"></strong> foydalanuvchisini o'chirmoqchimisiz?
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('deleteModal')">Bekor qilish</button>
+      <button class="btn btn-danger" onclick="deleteUser()">O'chirish</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.getElementById('topbarTitle').textContent = 'Foydalanuvchilar';
+  document.getElementById('topbarSub').textContent = 'Tizim foydalanuvchilari boshqaruvi';
+  document.getElementById('nav-users')?.classList.add('active');
+
+  if (!currentUser || (currentUser.role !== 'STAFF' && currentUser.role !== 'ADMIN')) {
+    window.location.href = '/dashboard';
+  }
+
+  let state = { page: 0, size: 15, total: 0, users: [] };
+  let editingId = null, deletingId = null;
+
+  async function loadUsers() {
+    document.getElementById('usersTable').innerHTML = '<div class="loading"><div class="spinner"></div>Yuklanmoqda...</div>';
+    const res = await api('GET', `/api/v1/users?page=${state.page}&size=${state.size}&sort=id,desc`);
+    if (!res || !res.ok) { document.getElementById('usersTable').innerHTML = '<div class="empty"><div class="empty-icon">⚠</div>Xatolik</div>'; return; }
+    const data = await res.json();
+    state.total = data.totalElements || 0;
+
+    const filter = document.getElementById('filterRole').value;
+    let users = data.content || [];
+    if (filter) users = users.filter(u => u.role === filter);
+
+    state.users = users;
+    document.getElementById('totalCount').textContent = `Jami: ${state.total}`;
+    renderTable();
+    renderPagination(data.totalPages || 1);
+  }
+
+  function renderTable() {
+    if (!state.users.length) {
+      document.getElementById('usersTable').innerHTML = '<div class="empty"><div class="empty-icon">👥</div>Foydalanuvchilar topilmadi</div>';
+      return;
+    }
+    document.getElementById('usersTable').innerHTML = `
+      <table>
+        <thead><tr><th>Ism</th><th>Telefon</th><th>Rol</th><th>Amallar</th></tr></thead>
+        <tbody>
+          ${state.users.map(u => `
+            <tr>
+              <td style="font-weight:500">${esc(u.fullName)}</td>
+              <td class="mono text-muted">${esc(u.phoneNumber)}</td>
+              <td><span class="badge ${u.role === 'STAFF' || u.role === 'ADMIN' ? 'badge-blue' : 'badge-green'}">${u.role}</span></td>
+              <td>
+                <div class="flex gap-2">
+                  <button class="btn btn-ghost btn-sm" onclick="openEdit('${u.id}')">Tahrirlash</button>
+                  <button class="btn btn-danger btn-sm" onclick="openDelete('${u.id}','${esc(u.fullName).replace(/'/g,"\\'")}')">O'chirish</button>
+                </div>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  function renderPagination(total) {
+    const p = document.getElementById('pagination');
+    if (total <= 1) { p.innerHTML = ''; return; }
+    let html = `<button onclick="goPage(${state.page-1})" ${state.page===0?'disabled':''}>← Oldingi</button>`;
+    const start = Math.max(0, state.page - 2), end = Math.min(total - 1, state.page + 2);
+    for (let i = start; i <= end; i++) html += `<button class="${i===state.page?'active':''}" onclick="goPage(${i})">${i+1}</button>`;
+    html += `<button onclick="goPage(${state.page+1})" ${state.page>=total-1?'disabled':''}>Keyingi →</button>`;
+    html += `<span class="info">Jami: ${state.total}</span>`;
+    p.innerHTML = html;
+  }
+  function goPage(p) { state.page = p; loadUsers(); }
+
+  function openCreateModal() {
+    document.getElementById('createAlert').innerHTML = '';
+    ['c_name','c_phone','c_password'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('c_role').value = 'MEMBER';
+    openModal('createModal');
+  }
+
+  async function createUser() {
+    const fullName = document.getElementById('c_name').value.trim();
+    const phoneNumber = document.getElementById('c_phone').value.trim();
+    const password = document.getElementById('c_password').value;
+    const role = document.getElementById('c_role').value;
+
+    if (!fullName || !phoneNumber || !password || !role) {
+      document.getElementById('createAlert').innerHTML = '<div class="alert alert-error">Barcha maydonlarni to\'ldiring</div>';
+      return;
+    }
+
+    const res = await api('POST', '/api/v1/users', { fullName, phoneNumber, password, role });
+    if (!res) return;
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      document.getElementById('createAlert').innerHTML = `<div class="alert alert-error">${err.message || 'Xatolik'}</div>`;
+      return;
+    }
+    closeModal('createModal');
+    toast('Foydalanuvchi qo\'shildi');
+    loadUsers();
+  }
+
+  function openEdit(id) {
+    const u = state.users.find(u => u.id === id);
+    if (!u) return;
+    editingId = id;
+    document.getElementById('e_name').value = u.fullName || '';
+    document.getElementById('e_phone').value = u.phoneNumber || '';
+    document.getElementById('e_password').value = '';
+    document.getElementById('e_role').value = u.role || 'MEMBER';
+    document.getElementById('editAlert').innerHTML = '';
+    openModal('editModal');
+  }
+
+  async function updateUser() {
+    const fullName = document.getElementById('e_name').value.trim();
+    const phoneNumber = document.getElementById('e_phone').value.trim();
+    const password = document.getElementById('e_password').value;
+    const role = document.getElementById('e_role').value;
+
+    if (!fullName || !phoneNumber || !password || !role) {
+      document.getElementById('editAlert').innerHTML = '<div class="alert alert-error">Barcha maydonlarni to\'ldiring</div>';
+      return;
+    }
+
+    const res = await api('PUT', `/api/v1/users/${editingId}`, { fullName, phoneNumber, password, role });
+    if (!res) return;
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      document.getElementById('editAlert').innerHTML = `<div class="alert alert-error">${err.message || 'Xatolik'}</div>`;
+      return;
+    }
+    closeModal('editModal');
+    toast('Foydalanuvchi yangilandi');
+    loadUsers();
+  }
+
+  function openDelete(id, name) { deletingId = id; document.getElementById('deleteUserName').textContent = name; openModal('deleteModal'); }
+
+  async function deleteUser() {
+    await api('DELETE', `/api/v1/users/${deletingId}`);
+    closeModal('deleteModal');
+    toast('Foydalanuvchi o\'chirildi', 'error');
+    loadUsers();
+  }
+
+  function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  loadUsers();
+</script>
+</section>
+</div>
+</body>
+</html>

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Janrlar — VertexLib</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: layout('Janrlar', ~{::section})}">
+<section>
+
+<div class="flex justify-between items-center mb-4">
+  <span class="text-muted text-sm" id="totalCount"></span>
+  <button class="btn btn-primary" id="addBtn" style="display:none" onclick="openModal('createModal')">+ Janr qo'shish</button>
+</div>
+
+<div class="card">
+  <div id="genresTable"><div class="loading"><div class="spinner"></div>Yuklanmoqda...</div></div>
+  <div class="card-body" style="padding-top:0">
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+
+<!-- CREATE -->
+<div class="modal-overlay" id="createModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-head">
+      <span class="modal-title">Yangi janr</span>
+      <button class="modal-close" onclick="closeModal('createModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="createAlert"></div>
+      <div class="form-grid cols-1">
+        <div class="field"><label>Janr nomi *</label><input type="text" id="c_name" maxlength="60" placeholder="Masalan: Roman"></div>
+        <div class="field"><label>Tavsif</label><textarea id="c_desc" maxlength="132" placeholder="Qisqacha tavsif..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('createModal')">Bekor qilish</button>
+      <button class="btn btn-primary" onclick="createGenre()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-head">
+      <span class="modal-title">Janrni tahrirlash</span>
+      <button class="modal-close" onclick="closeModal('editModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="editAlert"></div>
+      <div class="form-grid cols-1">
+        <div class="field"><label>Janr nomi *</label><input type="text" id="e_name" maxlength="60"></div>
+        <div class="field"><label>Tavsif</label><textarea id="e_desc" maxlength="132"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('editModal')">Bekor qilish</button>
+      <button class="btn btn-primary" onclick="updateGenre()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-head">
+      <span class="modal-title">Janrni o'chirish</span>
+      <button class="modal-close" onclick="closeModal('deleteModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:0.9rem;color:var(--muted)">
+        <strong style="color:var(--text)" id="deleteGenreName"></strong> janrini o'chirmoqchimisiz?
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('deleteModal')">Bekor qilish</button>
+      <button class="btn btn-danger" onclick="deleteGenre()">O'chirish</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.getElementById('topbarTitle').textContent = 'Janrlar';
+  document.getElementById('topbarSub').textContent = 'Kitob janrlari boshqaruvi';
+  document.getElementById('nav-genres')?.classList.add('active');
+
+  const isStaff = currentUser && (currentUser.role === 'STAFF' || currentUser.role === 'ADMIN');
+  if (isStaff) document.getElementById('addBtn').style.display = '';
+
+  let state = { page: 0, size: 20, total: 0, genres: [] };
+  let editingId = null, deletingId = null;
+
+  async function loadGenres() {
+    document.getElementById('genresTable').innerHTML = '<div class="loading"><div class="spinner"></div>Yuklanmoqda...</div>';
+    const res = await api('GET', `/api/v1/genres?page=${state.page}&size=${state.size}`);
+    if (!res || !res.ok) { document.getElementById('genresTable').innerHTML = '<div class="empty"><div class="empty-icon">⚠</div>Xatolik</div>'; return; }
+    const data = await res.json();
+    state.total = data.totalElements || 0;
+    state.genres = data.content || [];
+    document.getElementById('totalCount').textContent = `Jami: ${state.total} ta janr`;
+    renderTable();
+    renderPagination(data.totalPages || 1);
+  }
+
+  function renderTable() {
+    if (!state.genres.length) {
+      document.getElementById('genresTable').innerHTML = '<div class="empty"><div class="empty-icon">🏷</div>Janrlar yo\'q</div>';
+      return;
+    }
+    document.getElementById('genresTable').innerHTML = `
+      <table>
+        <thead><tr><th>#</th><th>Janr nomi</th>${isStaff ? '<th>Amallar</th>' : ''}</tr></thead>
+        <tbody>
+          ${state.genres.map((g, i) => `
+            <tr>
+              <td class="mono text-muted">${state.page * state.size + i + 1}</td>
+              <td style="font-weight:500">${esc(g.name)}</td>
+              ${isStaff ? `<td>
+                <div class="flex gap-2">
+                  <button class="btn btn-ghost btn-sm" onclick="openEdit('${g.id}')">Tahrirlash</button>
+                  <button class="btn btn-danger btn-sm" onclick="openDelete('${g.id}','${esc(g.name).replace(/'/g,"\\'")}')">O'chirish</button>
+                </div>
+              </td>` : ''}
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  function renderPagination(total) {
+    const p = document.getElementById('pagination');
+    if (total <= 1) { p.innerHTML = ''; return; }
+    let html = `<button onclick="goPage(${state.page-1})" ${state.page===0?'disabled':''}>← Oldingi</button>`;
+    for (let i = 0; i < total; i++) html += `<button class="${i===state.page?'active':''}" onclick="goPage(${i})">${i+1}</button>`;
+    html += `<button onclick="goPage(${state.page+1})" ${state.page>=total-1?'disabled':''}>Keyingi →</button>`;
+    p.innerHTML = html;
+  }
+  function goPage(p) { state.page = p; loadGenres(); }
+
+  async function createGenre() {
+    const name = document.getElementById('c_name').value.trim();
+    const description = document.getElementById('c_desc').value.trim();
+    if (!name) { document.getElementById('createAlert').innerHTML = '<div class="alert alert-error">Janr nomi kiritilishi shart</div>'; return; }
+    const res = await api('POST', '/api/v1/genres', { name, description });
+    if (!res) return;
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      document.getElementById('createAlert').innerHTML = `<div class="alert alert-error">${err.message || 'Xatolik'}</div>`;
+      return;
+    }
+    closeModal('createModal');
+    document.getElementById('c_name').value = ''; document.getElementById('c_desc').value = '';
+    document.getElementById('createAlert').innerHTML = '';
+    toast('Janr qo\'shildi');
+    loadGenres();
+  }
+
+  function openEdit(id) {
+    const g = state.genres.find(g => g.id === id);
+    if (!g) return;
+    editingId = id;
+    document.getElementById('e_name').value = g.name || '';
+    document.getElementById('e_desc').value = g.description || '';
+    document.getElementById('editAlert').innerHTML = '';
+    openModal('editModal');
+  }
+
+  async function updateGenre() {
+    const name = document.getElementById('e_name').value.trim();
+    const description = document.getElementById('e_desc').value.trim();
+    if (!name) { document.getElementById('editAlert').innerHTML = '<div class="alert alert-error">Janr nomi kiritilishi shart</div>'; return; }
+    const res = await api('PUT', `/api/v1/genres/${editingId}`, { name, description });
+    if (!res) return;
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      document.getElementById('editAlert').innerHTML = `<div class="alert alert-error">${err.message || 'Xatolik'}</div>`;
+      return;
+    }
+    closeModal('editModal');
+    toast('Janr yangilandi');
+    loadGenres();
+  }
+
+  function openDelete(id, name) { deletingId = id; document.getElementById('deleteGenreName').textContent = name; openModal('deleteModal'); }
+
+  async function deleteGenre() {
+    await api('DELETE', `/api/v1/genres/${deletingId}`);
+    closeModal('deleteModal');
+    toast('Janr o\'chirildi', 'error');
+    loadGenres();
+  }
+
+  function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  loadGenres();
+</script>
+</section>
+</div>
+</body>
+</html>

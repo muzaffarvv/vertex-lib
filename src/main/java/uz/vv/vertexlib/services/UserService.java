@@ -1,6 +1,8 @@
 package uz.vv.vertexlib.services;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,8 +14,6 @@ import uz.vv.vertexlib.exceptions.AlreadyExistsException;
 import uz.vv.vertexlib.exceptions.ResourceNotFoundException;
 import uz.vv.vertexlib.mappers.UserMapper;
 import uz.vv.vertexlib.repositories.UserRepository;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -76,9 +76,8 @@ public class UserService implements BaseService<UserRequest, UserResponse, Strin
     }
 
     @Transactional(readOnly = true)
-    public List<UserResponse> getAll() { // todo page
-        return userRepository.findAll().stream()
-                .map(userMapper::toResponse)
-                .toList();
+    public Page<UserResponse> getAll(Pageable pageable) {
+        return userRepository.findAll(pageable)
+                .map(userMapper::toResponse);
     }
 }

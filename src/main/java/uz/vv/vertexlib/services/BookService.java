@@ -1,6 +1,8 @@
 package uz.vv.vertexlib.services;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.vv.vertexlib.base.BaseService;
@@ -79,9 +81,8 @@ public class BookService implements BaseService<BookCreateRequest, BookResponse,
     }
 
     @Transactional(readOnly = true)
-    public List<BookResponse> getAll() {
-        return repository.findAll().stream()
-                .map(mapper::toResponse)
-                .toList();
+    public Page<BookResponse> getAll(Pageable pageable) {
+        return repository.findAll(pageable)
+                .map(mapper::toResponse);
     }
 }
