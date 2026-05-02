@@ -36,19 +36,21 @@ public class AuthService {
             throw new AlreadyExistsException("Foydalanuvchi", "telefon raqami", request.phoneNumber());
         }
 
-        User user = new User();
-        user.setFullName(request.fullName());
-        user.setPhoneNumber(request.phoneNumber());
-        user.setPassword(passwordEncoder.encode(request.password()));
-        user.setRole(UserRole.MEMBER); 
+        User user = User.builder()
+                .fullName(request.fullName())
+                .phoneNumber(request.phoneNumber())
+                .password(passwordEncoder.encode(request.password()))
+                .role(UserRole.MEMBER)
+                .build();
 
         User savedUser = userRepository.save(user);
-        UserResponse userResponse = userMapper.toResponse(savedUser);
 
-        UserDetails userDetails = userDetailsService.loadUserByUsername(savedUser.getPhoneNumber());
-        String token = jwtUtil.generateToken(userDetails);
+        String token = jwtUtil.generateToken(
+                userDetailsService.loadUserByUsername(
+                        savedUser.getPhoneNumber())
+        );
 
-        return AuthResponse.of(token, userResponse);
+        return AuthResponse.of(token, userMapper.toResponse(savedUser));
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -62,8 +64,7 @@ public class AuthService {
         User user = userRepository.findByPhoneNumber(request.phoneNumber())
                 .orElseThrow(); 
 
-        UserDetails userDetails = userDetailsService.loadUserByUsername(user.getPhoneNumber());
-        String token = jwtUtil.generateToken(userDetails);
+        String token = jwtUtil.generateToken(userDetailsService.loadUserByUsername(user.getPhoneNumber()));
 
         return AuthResponse.of(token, userMapper.toResponse(user));
     }

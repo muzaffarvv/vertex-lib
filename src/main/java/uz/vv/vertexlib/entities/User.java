@@ -8,7 +8,10 @@ import uz.vv.vertexlib.enums.UserRole;
 @Getter
 @Setter
 @Entity
+@Builder
 @Table(name = "users")
+@NoArgsConstructor
+@AllArgsConstructor
 public class User extends BaseEntity {
 
     @Column(nullable = false, length = 132)

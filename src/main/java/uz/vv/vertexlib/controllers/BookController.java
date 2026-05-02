@@ -2,6 +2,8 @@ package uz.vv.vertexlib.controllers;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -46,8 +48,8 @@ public class BookController {
     }
 
     @GetMapping     // TODO: pagination qo'shish kerak
-    public ResponseEntity<List<BookResponse>> getAll() {
-        return ResponseEntity.ok(bookService.getAll());
+    public ResponseEntity<Page<BookResponse>> getAll(Pageable pageable) {
+        return ResponseEntity.ok(bookService.getAll(pageable));
     }
 
     @DeleteMapping("/{id}")
