@@ -20,6 +20,7 @@ import uz.vv.vertexlib.mappers.LoanMapper;
 import uz.vv.vertexlib.repositories.BookRepository;
 import uz.vv.vertexlib.repositories.LoanRepository;
 import uz.vv.vertexlib.repositories.UserRepository;
+import uz.vv.vertexlib.security.SecurityUtils;
 import uz.vv.vertexlib.utils.SearchSpecification;
 
 import java.time.Instant;
@@ -93,5 +94,12 @@ public class LoanService {
         List<String> fields = List.of("book.title", "member.fullName", "member.phoneNumber","staff.fullName", "staff.phoneNumber");
         Specification<Loans> spec = SearchSpecification.globalStringSearch(search, fields);
         return loanRepository.findAll(spec, pageable).map(mapper::toResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<LoanResponse> getMyLoans(Pageable pageable) {
+        String currentUserId = SecurityUtils.getCurrentUserId();
+        return loanRepository.findAllByMemberId(currentUserId, pageable)
+                .map(mapper::toResponse);
     }
 }
