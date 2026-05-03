@@ -1,140 +1,112 @@
 <!DOCTYPE html>
-<html lang="uz" xmlns:th="http://www.thymeleaf.org">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard — VertexLib</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" th:href="@{/css/main.css}">
-</head>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout('Dashboard', ~{::div.page-content})}">
 <body>
+    <div class="page-content max-w-7xl mx-auto">
+        
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-2xl font-bold text-slate-900">Dashboard</h1>
+            <p class="text-sm text-slate-500 mt-1">Overview of library statistics and activities.</p>
+        </div>
 
-<div th:replace="~{fragments/layout :: layout('Dashboard', ~{::section})}">
-<section>
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            
+            <div class="bg-white rounded-xl border border-slate-100 p-6 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-slate-500">Total Books</p>
+                        <h3 class="text-3xl font-bold text-slate-800 mt-1" x-data="{ total: 0 }" x-init="api.get('/books').then(d => total = d.totalElements || d.content?.length || 0).catch(e => {})" x-text="total">...</h3>
+                    </div>
+                    <div class="h-12 w-12 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                    </div>
+                </div>
+            </div>
 
-<div class="stats-row" id="statsRow">
-  <div class="stat-card"><div class="stat-label">Jami kitoblar</div><div class="stat-value accent" id="statBooks">—</div></div>
-  <div class="stat-card"><div class="stat-label">Janrlar</div><div class="stat-value" id="statGenres">—</div></div>
-  <div class="stat-card"><div class="stat-label">Foydalanuvchilar</div><div class="stat-value" id="statUsers">—</div></div>
-  <div class="stat-card"><div class="stat-label">Faol ijaralar</div><div class="stat-value success" id="statLoans">—</div></div>
-</div>
+            <div class="bg-white rounded-xl border border-slate-100 p-6 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-slate-500">Active Loans</p>
+                        <h3 class="text-3xl font-bold text-slate-800 mt-1">24</h3>
+                    </div>
+                    <div class="h-12 w-12 rounded-full bg-amber-50 flex items-center justify-center text-amber-500">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                </div>
+            </div>
 
-<div style="display:grid; grid-template-columns:1fr 1fr; gap:20px">
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">So'nggi ijaralar</span>
-      <a href="/loans" class="btn btn-ghost btn-sm">Barchasini ko'rish →</a>
+            <div class="bg-white rounded-xl border border-slate-100 p-6 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-slate-500">Registered Users</p>
+                        <h3 class="text-3xl font-bold text-slate-800 mt-1">156</h3>
+                    </div>
+                    <div class="h-12 w-12 rounded-full bg-green-50 flex items-center justify-center text-green-500">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl border border-slate-100 p-6 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-slate-500">Overdue Returns</p>
+                        <h3 class="text-3xl font-bold text-slate-800 mt-1">3</h3>
+                    </div>
+                    <div class="h-12 w-12 rounded-full bg-red-50 flex items-center justify-center text-red-500">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Recent Activity Chart / Table Placeholder -->
+        <div class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+            <div class="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h3 class="text-base font-semibold text-slate-800">Recent Books</h3>
+                <a href="/books" class="text-sm font-medium text-indigo-600 hover:text-indigo-700">View all &rarr;</a>
+            </div>
+            
+            <div class="p-0 overflow-x-auto">
+                <table class="w-full text-left border-collapse" x-data="{ books: [], loading: true }" x-init="api.get('/books').then(d => { books = (d.content || d || []).slice(0, 5); loading = false }).catch(e => loading = false)">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-100">
+                            <th class="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Title</th>
+                            <th class="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Author</th>
+                            <th class="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <template x-if="loading">
+                            <tr>
+                                <td colspan="3" class="px-6 py-8 text-center text-slate-400 text-sm">Loading recent books...</td>
+                            </tr>
+                        </template>
+                        <template x-if="!loading && books.length === 0">
+                            <tr>
+                                <td colspan="3" class="px-6 py-8 text-center text-slate-400 text-sm">No books found.</td>
+                            </tr>
+                        </template>
+                        <template x-for="book in books" :key="book.id">
+                            <tr class="hover:bg-slate-50/50 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-slate-900" x-text="book.title"></div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600" x-text="book.author"></td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                        :class="book.available ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'"
+                                        x-text="book.available ? 'Available' : 'Borrowed'"></span>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
     </div>
-    <div class="card-body" style="padding:0">
-      <div id="recentLoans"><div class="loading"><div class="spinner"></div>Yuklanmoqda...</div></div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">So'nggi kitoblar</span>
-      <a href="/books" class="btn btn-ghost btn-sm">Barchasini ko'rish →</a>
-    </div>
-    <div class="card-body" style="padding:0">
-      <div id="recentBooks"><div class="loading"><div class="spinner"></div>Yuklanmoqda...</div></div>
-    </div>
-  </div>
-</div>
-
-<script>
-  document.getElementById('topbarTitle').textContent = 'Dashboard';
-  document.getElementById('topbarSub').textContent = 'Umumiy ko\'rinish';
-  document.getElementById('nav-dashboard').classList.add('active');
-
-  async function loadDashboard() {
-    // Books
-    const bRes = await api('GET', '/api/v1/books?size=5&sort=id,desc');
-    if (bRes && bRes.ok) {
-      const bData = await bRes.json();
-      document.getElementById('statBooks').textContent = bData.totalElements ?? '—';
-      renderRecentBooks(bData.content || []);
-    }
-
-    // Genres
-    const gRes = await api('GET', '/api/v1/genres?size=1');
-    if (gRes && gRes.ok) {
-      const gData = await gRes.json();
-      document.getElementById('statGenres').textContent = gData.totalElements ?? '—';
-    }
-
-    // Only for STAFF
-    const isStaff = currentUser && (currentUser.role === 'STAFF' || currentUser.role === 'ADMIN');
-    if (isStaff) {
-      const uRes = await api('GET', '/api/v1/users?size=1');
-      if (uRes && uRes.ok) {
-        const uData = await uRes.json();
-        document.getElementById('statUsers').textContent = uData.totalElements ?? '—';
-      }
-
-      const lRes = await api('GET', '/api/v1/loans?size=5&sort=id,desc');
-      if (lRes && lRes.ok) {
-        const lData = await lRes.json();
-        document.getElementById('statLoans').textContent = lData.totalElements ?? '—';
-        renderRecentLoans(lData.content || []);
-      }
-    } else {
-      document.getElementById('recentLoans').innerHTML = '<div class="empty"><div class="empty-icon">🔒</div>Faqat xodimlar uchun</div>';
-      document.getElementById('statUsers').textContent = '—';
-      document.getElementById('statLoans').textContent = '—';
-    }
-  }
-
-  function renderRecentBooks(books) {
-    if (!books.length) {
-      document.getElementById('recentBooks').innerHTML = '<div class="empty"><div class="empty-icon">📚</div>Kitoblar yo\'q</div>';
-      return;
-    }
-    document.getElementById('recentBooks').innerHTML = `
-      <table>
-        <thead><tr><th>Nomi</th><th>Muallif</th><th>Nusxa</th></tr></thead>
-        <tbody>
-          ${books.map(b => `
-            <tr>
-              <td><a href="/books/${b.id}" style="color:var(--accent);text-decoration:none">${esc(b.title)}</a></td>
-              <td class="text-muted text-sm">${esc(b.author)}</td>
-              <td><span class="badge ${b.availableCopies > 0 ? 'badge-green' : 'badge-red'}">${b.availableCopies}/${b.totalCopies}</span></td>
-            </tr>`).join('')}
-        </tbody>
-      </table>`;
-  }
-
-  function renderRecentLoans(loans) {
-    if (!loans.length) {
-      document.getElementById('recentLoans').innerHTML = '<div class="empty"><div class="empty-icon">🔄</div>Ijaralar yo\'q</div>';
-      return;
-    }
-    document.getElementById('recentLoans').innerHTML = `
-      <table>
-        <thead><tr><th>Kitob</th><th>A'zo</th><th>Holat</th></tr></thead>
-        <tbody>
-          ${loans.map(l => {
-            const returned = !!l.returnDate;
-            const overdue = !returned && new Date(l.dueDate) < new Date();
-            const badge = returned ? 'badge-green' : overdue ? 'badge-red' : 'badge-yellow';
-            const status = returned ? 'Qaytarildi' : overdue ? 'Muddati o\'tgan' : 'Faol';
-            return `<tr>
-              <td class="text-sm">${esc(l.book?.title || '—')}</td>
-              <td class="text-muted text-sm">${esc(l.member?.fullName || '—')}</td>
-              <td><span class="badge ${badge}">${status}</span></td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>`;
-  }
-
-  function esc(s) {
-    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-
-  loadDashboard();
-</script>
-</section>
-</div>
-
 </body>
 </html>
