@@ -3,6 +3,7 @@ package uz.vv.vertexlib.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +15,9 @@ import uz.vv.vertexlib.exceptions.AlreadyExistsException;
 import uz.vv.vertexlib.exceptions.ResourceNotFoundException;
 import uz.vv.vertexlib.mappers.UserMapper;
 import uz.vv.vertexlib.repositories.UserRepository;
+import uz.vv.vertexlib.utils.SearchSpecification;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -76,8 +80,9 @@ public class UserService implements BaseService<UserRequest, UserResponse, Strin
     }
 
     @Transactional(readOnly = true)
-    public Page<UserResponse> getAll(Pageable pageable) {
-        return userRepository.findAll(pageable)
-                .map(userMapper::toResponse);
+    public Page<UserResponse> getAll(String search, Pageable pageable) {
+        List<String> fields = List.of("fullName", "phoneNumber");
+        Specification<User> spec = SearchSpecification.globalStringSearch(search, fields);
+        return userRepository.findAll(spec, pageable).map(userMapper::toResponse);
     }
 }

@@ -3,6 +3,7 @@ package uz.vv.vertexlib.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.vv.vertexlib.base.BaseService;
@@ -14,6 +15,7 @@ import uz.vv.vertexlib.exceptions.AlreadyExistsException;
 import uz.vv.vertexlib.exceptions.ResourceNotFoundException;
 import uz.vv.vertexlib.mappers.BookMapper;
 import uz.vv.vertexlib.repositories.BookRepository;
+import uz.vv.vertexlib.utils.SearchSpecification;
 
 import java.util.List;
 
@@ -81,8 +83,9 @@ public class BookService implements BaseService<BookCreateRequest, BookResponse,
     }
 
     @Transactional(readOnly = true)
-    public Page<BookResponse> getAll(Pageable pageable) {
-        return repository.findAll(pageable)
-                .map(mapper::toResponse);
+    public Page<BookResponse> getAll(String search, Pageable pageable) {
+        List<String> fields = List.of("title", "author", "isbn", "genre.name");
+        Specification<Book> spec = SearchSpecification.globalStringSearch(search, fields);
+        return repository.findAll(spec, pageable).map(mapper::toResponse);
     }
 }

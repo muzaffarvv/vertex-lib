@@ -3,6 +3,7 @@ package uz.vv.vertexlib.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.vv.vertexlib.base.BaseService;
@@ -13,6 +14,7 @@ import uz.vv.vertexlib.exceptions.AlreadyExistsException;
 import uz.vv.vertexlib.exceptions.ResourceNotFoundException;
 import uz.vv.vertexlib.mappers.GenreMapper;
 import uz.vv.vertexlib.repositories.GenreRepository;
+import uz.vv.vertexlib.utils.SearchSpecification;
 
 import java.util.List;
 
@@ -63,8 +65,9 @@ public class GenreService implements BaseService<GenreRequest, GenreResponse, St
     }
 
     @Transactional(readOnly = true)
-    public Page<GenreResponse> getAll(Pageable pageable) {
-        return repository.findAll(pageable)
-                .map(mapper::toResponse);
+    public Page<GenreResponse> getAll(String search, Pageable pageable) {
+        List<String> fields = List.of("name", "description");
+        Specification<Genres> spec = SearchSpecification.globalStringSearch(search, fields);
+        return repository.findAll(spec, pageable).map(mapper::toResponse);
     }
 }

@@ -47,9 +47,11 @@ public class BookController {
         return ResponseEntity.ok(bookService.getById(id));
     }
 
-    @GetMapping     // TODO: pagination qo'shish kerak
-    public ResponseEntity<Page<BookResponse>> getAll(Pageable pageable) {
-        return ResponseEntity.ok(bookService.getAll(pageable));
+    @GetMapping
+    public ResponseEntity<Page<BookResponse>> getAll(
+            @RequestParam(required = false) String search,
+            Pageable pageable) {
+        return ResponseEntity.ok(bookService.getAll(search, pageable));
     }
 
     @DeleteMapping("/{id}")

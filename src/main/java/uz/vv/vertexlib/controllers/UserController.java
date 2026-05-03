@@ -39,8 +39,10 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<UserResponse>> getAll(Pageable pageable) {
-        return ResponseEntity.ok(userService.getAll(pageable));
+    public ResponseEntity<Page<UserResponse>> getAll(
+            @RequestParam(required = false) String search,
+            Pageable pageable) {
+        return ResponseEntity.ok(userService.getAll(search, pageable));
     }
 
     @DeleteMapping("/{id}")

@@ -40,8 +40,10 @@ public class LoanController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<LoanResponse>> getAll(Pageable pageable) {
-        return ResponseEntity.ok(loanService.getAll(pageable));
+    public ResponseEntity<Page<LoanResponse>> getAll(
+            @RequestParam(required = false) String search,
+            Pageable pageable) {
+        return ResponseEntity.ok(loanService.getAll(search, pageable));
     }
 
     // TODO: faqat o'zining ijaralarini ko'radigan endpoint ham qilish kerak
