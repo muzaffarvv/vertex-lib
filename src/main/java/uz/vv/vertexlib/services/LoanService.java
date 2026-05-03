@@ -3,6 +3,7 @@ package uz.vv.vertexlib.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.vv.vertexlib.dtos.requests.LoanCreateRequest;
@@ -19,6 +20,7 @@ import uz.vv.vertexlib.mappers.LoanMapper;
 import uz.vv.vertexlib.repositories.BookRepository;
 import uz.vv.vertexlib.repositories.LoanRepository;
 import uz.vv.vertexlib.repositories.UserRepository;
+import uz.vv.vertexlib.utils.SearchSpecification;
 
 import java.time.Instant;
 import java.util.List;
@@ -87,8 +89,9 @@ public class LoanService {
     }
 
     @Transactional(readOnly = true)
-    public Page<LoanResponse> getAll(Pageable pageable) {
-        return loanRepository.findAll(pageable)
-                .map(mapper::toResponse);
+    public Page<LoanResponse> getAll(String search, Pageable pageable) {
+        List<String> fields = List.of("book.title", "member.fullName", "member.phoneNumber","staff.fullName", "staff.phoneNumber");
+        Specification<Loans> spec = SearchSpecification.globalStringSearch(search, fields);
+        return loanRepository.findAll(spec, pageable).map(mapper::toResponse);
     }
 }

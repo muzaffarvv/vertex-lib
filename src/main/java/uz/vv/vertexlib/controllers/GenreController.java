@@ -39,8 +39,10 @@ public class GenreController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<GenreResponse>> getAll(Pageable pageable) {
-        return ResponseEntity.ok(genreService.getAll(pageable));
+    public ResponseEntity<Page<GenreResponse>> getAll(
+            @RequestParam(required = false) String search,
+            Pageable pageable) {
+        return ResponseEntity.ok(genreService.getAll(search, pageable));
     }
 
     @DeleteMapping("/{id}")

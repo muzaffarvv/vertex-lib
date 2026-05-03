@@ -10,7 +10,7 @@ import uz.vv.vertexlib.base.BaseRepository;
 import java.util.Optional;
 
 @Repository
-public interface BookRepository extends BaseRepository<Book> {
+public interface BookRepository extends BaseRepository<Book>  {
     @Override
     Page<Book> findAll(Pageable pageable);
     Optional<Book> findByIsbn(String isbn);
