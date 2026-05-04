@@ -7,11 +7,12 @@ import uz.vv.vertexlib.dtos.responses.LoanResponse;
 import uz.vv.vertexlib.entities.Loans;
 
 @Mapper(componentModel = "spring",
-        uses = {BookMapper.class, UserMapper.class},
-        unmappedTargetPolicy = ReportingPolicy.IGNORE)
+        uses = {MovieMapper.class, UserMapper.class},
+        unmappedTargetPolicy = ReportingPolicy.IGNORE,
+        builder = @Builder(disableBuilder = true))
 public interface LoanMapper {
 
-    @Mapping(target = "book.id", source = "bookId")
+    @Mapping(target = "movie.id", source = "movieId")
     @Mapping(target = "member.id", source = "memberId")
     @Mapping(target = "staff.id", source = "staffId")
     @Mapping(target = "loanDate", expression = "java(java.time.Instant.now())")

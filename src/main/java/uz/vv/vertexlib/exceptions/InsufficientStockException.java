@@ -6,9 +6,9 @@ public class InsufficientStockException extends BaseException {
         super(message);
     }
 
-    public static InsufficientStockException forBook(String bookTitle) {
+    public static InsufficientStockException forMovie(String movieTitle) {
         return new InsufficientStockException(
-                String.format("'%s' kitobining mavjud nusxalari tugagan", bookTitle)
+                String.format("'%s' kitobining mavjud nusxalari tugagan", movieTitle)
         );
     }
 

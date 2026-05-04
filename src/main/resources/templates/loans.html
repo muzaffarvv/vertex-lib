@@ -1,105 +1,258 @@
 <!DOCTYPE html>
 <html lang="uz" xmlns:th="http://www.thymeleaf.org">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ijaralar — VertexLib</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" th:href="@{/css/main.css}">
+<head th:replace="~{fragments/layout :: header('Ijaralar')}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ijaralar — VertexLib</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="/js/api.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .sidebar-link { display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:10px;font-size:0.875rem;font-weight:500;color:#64748b;transition:background 0.15s,color 0.15s;text-decoration:none; }
+    .sidebar-link:hover { background:#f1f5f9;color:#1e293b; }
+    .sidebar-link.active { background:#eef2ff;color:#4f46e5; }
+    .sidebar-link svg { flex-shrink:0;width:18px;height:18px; }
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+    .skeleton { animation:pulse 1.5s ease-in-out infinite; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)} }
+    .fade-in { animation:fadeIn 0.25s ease forwards; }
+    .table-row { transition:background 0.1s; }
+    .table-row:hover { background:#f8fafc; }
+    .modal-backdrop { position:fixed;inset:0;background:rgba(15,23,42,0.35);backdrop-filter:blur(2px);z-index:50;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.2s; }
+    .modal-backdrop.open { opacity:1;pointer-events:all; }
+    .modal-box { background:#fff;border-radius:16px;border:1px solid #e2e8f0;box-shadow:0 20px 60px rgba(0,0,0,0.12);width:100%;max-width:480px;transform:scale(0.97) translateY(6px);transition:transform 0.2s;max-height:90vh;overflow-y:auto; }
+    .modal-backdrop.open .modal-box { transform:scale(1) translateY(0); }
+    #toast { position:fixed;bottom:24px;right:24px;z-index:100;display:flex;flex-direction:column;gap:8px; }
+    .toast-item { padding:10px 16px;border-radius:10px;font-size:0.85rem;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,0.1);animation:fadeIn 0.2s ease forwards; }
+    ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:99px}
+    select { appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' viewBox='0 0 24 24'%3E%3Cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px!important; }
+  </style>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
 
-<div th:replace="~{fragments/layout :: layout('Ijaralar', ~{::section})}">
-<section>
+<div class="flex h-screen overflow-hidden">
 
-<div class="flex justify-between items-center mb-4">
-  <div class="flex gap-2 items-center">
-    <select id="filterStatus" onchange="loadLoans()" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:0.82rem;outline:none">
-      <option value="">Barchasi</option>
-      <option value="active">Faol</option>
-      <option value="overdue">Muddati o'tgan</option>
-      <option value="returned">Qaytarilgan</option>
-    </select>
-  </div>
-  <button class="btn btn-primary" onclick="openModal('createModal')">+ Yangi ijara</button>
-</div>
-
-<div class="card">
-  <div id="loansTable"><div class="loading"><div class="spinner"></div>Yuklanmoqda...</div></div>
-  <div class="card-body" style="padding-top:0">
-    <div class="pagination" id="pagination"></div>
-  </div>
-</div>
-
-<!-- CREATE LOAN -->
-<div class="modal-overlay" id="createModal">
-  <div class="modal">
-    <div class="modal-head">
-      <span class="modal-title">Yangi ijara yaratish</span>
-      <button class="modal-close" onclick="closeModal('createModal')">✕</button>
+  <!-- SIDEBAR -->
+  <aside class="w-60 bg-white border-r border-slate-100 flex flex-col flex-shrink-0 h-full">
+    <div class="px-5 py-5 border-b border-slate-100">
+      <div class="flex items-center gap-2.5">
+        <div class="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        </div>
+        <span class="text-base font-bold text-slate-900 tracking-tight">VertexLib</span>
+      </div>
     </div>
-    <div class="modal-body">
+    <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
+      <p class="text-xs font-semibold text-slate-400 uppercase tracking-widest px-2 mb-2">Asosiy</p>
+      <a href="/dashboard" class="sidebar-link">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        Dashboard
+      </a>
+      <a href="/movies" class="sidebar-link">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        Filmlar
+      </a>
+      <a href="/loans" class="sidebar-link active" id="nav-loans">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Ijaralar
+      </a>
+      <a href="/users" class="sidebar-link">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        A'zolar
+      </a>
+      <a href="/genres" class="sidebar-link">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a2 2 0 012-2z"/></svg>
+        Janrlar
+      </a>
+      <div class="pt-3">
+        <p class="text-xs font-semibold text-slate-400 uppercase tracking-widest px-2 mb-2">Hisobot</p>
+        <a href="/reports" class="sidebar-link">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          Statistika
+        </a>
+      </div>
+    </nav>
+    <div class="px-3 py-3 border-t border-slate-100">
+      <div class="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
+           onclick="api.logout ? api.logout() : (localStorage.removeItem('token'), window.location.href='/login')">
+        <div class="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 flex-shrink-0">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-xs font-semibold text-slate-700 truncate">Admin</p>
+          <p class="text-xs text-slate-400">Chiqish</p>
+        </div>
+        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="flex-1 overflow-y-auto">
+
+    <!-- Topbar -->
+    <div class="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-slate-100 px-8 py-4 flex items-center justify-between">
+      <div>
+        <h1 class="text-lg font-bold text-slate-900 leading-tight">Ijaralar</h1>
+        <p class="text-xs text-slate-400 mt-0.5">Film ijaralari boshqaruvi</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <!-- Filter -->
+        <select id="filterStatus" onchange="state.page=0;loadLoans()"
+                class="text-sm text-slate-600 border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+          <option value="">Barchasi</option>
+          <option value="active">Faol</option>
+          <option value="overdue">Muddati o'tgan</option>
+          <option value="returned">Qaytarilgan</option>
+        </select>
+        <button onclick="openCreateModal()"
+                class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors shadow-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Yangi ijara
+        </button>
+      </div>
+    </div>
+
+    <div class="p-8">
+
+      <!-- Stats strip -->
+      <div class="grid grid-cols-3 gap-4 mb-6">
+        <div class="bg-white rounded-xl border border-slate-100 px-5 py-4 shadow-sm flex items-center gap-3">
+          <div class="h-9 w-9 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500 flex-shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <div>
+            <p class="text-xs text-slate-400 font-medium">Faol</p>
+            <p class="text-lg font-bold text-slate-800 leading-tight" id="statActive">—</p>
+          </div>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-100 px-5 py-4 shadow-sm flex items-center gap-3">
+          <div class="h-9 w-9 rounded-xl bg-red-50 flex items-center justify-center text-red-500 flex-shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+          </div>
+          <div>
+            <p class="text-xs text-slate-400 font-medium">Muddati o'tgan</p>
+            <p class="text-lg font-bold text-red-600 leading-tight" id="statOverdue">—</p>
+          </div>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-100 px-5 py-4 shadow-sm flex items-center gap-3">
+          <div class="h-9 w-9 rounded-xl bg-green-50 flex items-center justify-center text-green-500 flex-shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <div>
+            <p class="text-xs text-slate-400 font-medium">Qaytarilgan</p>
+            <p class="text-lg font-bold text-slate-800 leading-tight" id="statReturned">—</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table card -->
+      <div class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+        <div id="loansTable">
+          <div class="flex items-center justify-center gap-3 py-16 text-slate-400 text-sm">
+            <svg class="w-5 h-5 animate-spin text-indigo-400" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+            Yuklanmoqda...
+          </div>
+        </div>
+        <div class="px-6 py-3 border-t border-slate-50 flex items-center justify-between" id="paginationWrap" style="display:none">
+          <span class="text-xs text-slate-400" id="pageInfo"></span>
+          <div class="flex gap-1" id="pagination"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ===== CREATE LOAN MODAL ===== -->
+<div class="modal-backdrop" id="createModal">
+  <div class="modal-box">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 sticky top-0 bg-white rounded-t-2xl z-10">
+      <h3 class="text-sm font-semibold text-slate-800">Yangi ijara yaratish</h3>
+      <button onclick="closeModal('createModal')" class="h-8 w-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="px-6 py-5 space-y-4">
       <div id="createAlert"></div>
-      <div class="form-grid cols-1">
-        <div class="field">
-          <label>Kitob *</label>
-          <select id="c_bookId"><option value="">Tanlang...</option></select>
-        </div>
-        <div class="field">
-          <label>A'zo *</label>
-          <select id="c_memberId"><option value="">Tanlang...</option></select>
-        </div>
-        <div class="field">
-          <label>Xodim *</label>
-          <select id="c_staffId"><option value="">Tanlang...</option></select>
-        </div>
-        <div class="field">
-          <label>Qaytarish sanasi *</label>
-          <input type="datetime-local" id="c_dueDate">
-        </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Film <span class="text-red-400">*</span></label>
+        <select id="c_movieId" class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm bg-white">
+          <option value="">Tanlang...</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">A'zo <span class="text-red-400">*</span></label>
+        <select id="c_memberId" class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm bg-white">
+          <option value="">Tanlang...</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Xodim <span class="text-red-400">*</span></label>
+        <select id="c_staffId" class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm bg-white">
+          <option value="">Tanlang...</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Qaytarish sanasi <span class="text-red-400">*</span></label>
+        <input type="datetime-local" id="c_dueDate"
+               class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm">
       </div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('createModal')">Bekor qilish</button>
-      <button class="btn btn-primary" onclick="createLoan()">Yaratish</button>
+    <div class="flex justify-end gap-2 px-6 py-4 border-t border-slate-100 bg-slate-50/50 rounded-b-2xl sticky bottom-0">
+      <button onclick="closeModal('createModal')" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">Bekor qilish</button>
+      <button onclick="createLoan()" class="px-4 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors shadow-sm">Yaratish</button>
     </div>
   </div>
 </div>
 
-<!-- RETURN MODAL -->
-<div class="modal-overlay" id="returnModal">
-  <div class="modal" style="max-width:420px">
-    <div class="modal-head">
-      <span class="modal-title">Kitobni qaytarish</span>
-      <button class="modal-close" onclick="closeModal('returnModal')">✕</button>
+<!-- ===== RETURN MODAL ===== -->
+<div class="modal-backdrop" id="returnModal">
+  <div class="modal-box" style="max-width:420px">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+      <h3 class="text-sm font-semibold text-slate-800">Filmni qaytarish</h3>
+      <button onclick="closeModal('returnModal')" class="h-8 w-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
     </div>
-    <div class="modal-body">
+    <div class="px-6 py-5 space-y-4">
       <div id="returnAlert"></div>
-      <p class="text-muted text-sm" style="margin-bottom:16px">Kitob: <strong style="color:var(--text)" id="returnBookName"></strong></p>
-      <div class="form-grid cols-1">
-        <div class="field">
-          <label>Qaytarish sanasi</label>
-          <input type="datetime-local" id="r_returnDate">
+      <!-- Book info badge -->
+      <div class="flex items-center gap-3 bg-slate-50 rounded-xl p-3 border border-slate-100">
+        <div class="h-8 w-8 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
+          <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
         </div>
-        <div class="field">
-          <label>Jarima (so'm)</label>
-          <input type="number" id="r_fine" min="0" step="0.01" placeholder="0.00">
+        <div>
+          <p class="text-xs text-slate-400">Qaytarilayotgan film</p>
+          <p class="text-sm font-semibold text-slate-800" id="returnMovieName"></p>
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Qaytarish sanasi</label>
+        <input type="datetime-local" id="r_returnDate"
+               class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Jarima (so'm)</label>
+        <div class="relative">
+          <input type="number" id="r_fine" min="0" step="0.01" placeholder="0"
+                 class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm pr-14">
+          <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium">so'm</span>
         </div>
       </div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('returnModal')">Bekor qilish</button>
-      <button class="btn btn-primary" onclick="returnBook()">Qaytarish</button>
+    <div class="flex justify-end gap-2 px-6 py-4 border-t border-slate-100 bg-slate-50/50 rounded-b-2xl">
+      <button onclick="closeModal('returnModal')" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">Bekor qilish</button>
+      <button onclick="returnBook()" class="px-4 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors shadow-sm">Qaytarish</button>
     </div>
   </div>
 </div>
+
+<!-- Toast -->
+<div id="toast"></div>
 
 <script>
-  document.getElementById('topbarTitle').textContent = 'Ijaralar';
-  document.getElementById('topbarSub').textContent = 'Kitob ijaralari boshqaruvi';
-  document.getElementById('nav-loans')?.classList.add('active');
-
-  // Redirect non-staff
+  // Auth check
   if (!currentUser || (currentUser.role !== 'STAFF' && currentUser.role !== 'ADMIN')) {
     window.location.href = '/dashboard';
   }
@@ -107,169 +260,225 @@
   let state = { page: 0, size: 15, total: 0, loans: [] };
   let returningId = null;
 
-  async function loadLoans() {
-    document.getElementById('loansTable').innerHTML = '<div class="loading"><div class="spinner"></div>Yuklanmoqda...</div>';
-    const res = await api('GET', `/api/v1/loans?page=${state.page}&size=${state.size}&sort=id,desc`);
-    if (!res || !res.ok) { document.getElementById('loansTable').innerHTML = '<div class="empty"><div class="empty-icon">⚠</div>Xatolik</div>'; return; }
-    const data = await res.json();
-    state.total = data.totalElements || 0;
+  const now = new Date();
+  const d = (daysOffset) => new Date(now.getTime() + daysOffset * 86400000).toISOString();
 
-    // Client-side filter by status
+  const MOCK_LOANS = [
+    { id:'1', movie:{ title:'O\'tkan kunlar' },       member:{ fullName:'Aziz Karimov' },    staff:{ fullName:'Malika Yusupova' }, loanDate:d(-20), dueDate:d(-5),  returnDate:null,     fineAmount:15000 },
+    { id:'2', movie:{ title:'Mehrobdan chayon' },     member:{ fullName:'Nilufar Rashidova' },staff:{ fullName:'Bobur Aliyev' },   loanDate:d(-10), dueDate:d(4),   returnDate:null,     fineAmount:null  },
+    { id:'3', movie:{ title:'Kecha va kunduz' },      member:{ fullName:'Jasur Toshmatov' },  staff:{ fullName:'Malika Yusupova' },loanDate:d(-30), dueDate:d(-15), returnDate:d(-2),    fineAmount:null  },
+    { id:'4', movie:{ title:'Ulug\'bek xazinasi' },   member:{ fullName:'Dildora Nazarova' }, staff:{ fullName:'Bobur Aliyev' },   loanDate:d(-7),  dueDate:d(7),   returnDate:null,     fineAmount:null  },
+    { id:'5', movie:{ title:'Sariq devni minib' },    member:{ fullName:'Sherzod Mirzayev' }, staff:{ fullName:'Malika Yusupova' },loanDate:d(-45), dueDate:d(-30), returnDate:d(-25),   fineAmount:25000 },
+    { id:'6', movie:{ title:'Ikki eshik orasi' },     member:{ fullName:'Gulnora Hamidova' }, staff:{ fullName:'Bobur Aliyev' },   loanDate:d(-3),  dueDate:d(11),  returnDate:null,     fineAmount:null  },
+    { id:'7', movie:{ title:'Muhammad al-Xorazmiy' }, member:{ fullName:'Otabek Sultanov' },  staff:{ fullName:'Malika Yusupova' },loanDate:d(-60), dueDate:d(-45), returnDate:d(-40),   fineAmount:null  },
+  ];
+
+  async function loadLoans() {
+    document.getElementById('loansTable').innerHTML = `
+            <div class="flex items-center justify-center gap-3 py-16 text-slate-400 text-sm">
+                <svg class="w-5 h-5 animate-spin text-indigo-400" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                </svg>Yuklanmoqda...
+            </div>`;
+
+    const allLoans = MOCK_LOANS;
+
+    // Update stats strip
+    document.getElementById('statActive').textContent   = allLoans.filter(l => !l.returnDate && new Date(l.dueDate) >= new Date()).length;
+    document.getElementById('statOverdue').textContent  = allLoans.filter(l => !l.returnDate && new Date(l.dueDate) < new Date()).length;
+    document.getElementById('statReturned').textContent = allLoans.filter(l => !!l.returnDate).length;
+
+    // Filter
     const filter = document.getElementById('filterStatus').value;
-    let loans = data.content || [];
-    if (filter === 'active') loans = loans.filter(l => !l.returnDate && new Date(l.dueDate) >= new Date());
-    else if (filter === 'overdue') loans = loans.filter(l => !l.returnDate && new Date(l.dueDate) < new Date());
-    else if (filter === 'returned') loans = loans.filter(l => !!l.returnDate);
+    let loans = allLoans;
+    if (filter === 'active')   loans = allLoans.filter(l => !l.returnDate && new Date(l.dueDate) >= new Date());
+    else if (filter === 'overdue')  loans = allLoans.filter(l => !l.returnDate && new Date(l.dueDate) < new Date());
+    else if (filter === 'returned') loans = allLoans.filter(l => !!l.returnDate);
 
     state.loans = loans;
+    state.total = loans.length;
     renderTable();
-    renderPagination(data.totalPages || 1);
+    renderPagination(1); // single page for mock
   }
 
   function renderTable() {
     if (!state.loans.length) {
-      document.getElementById('loansTable').innerHTML = '<div class="empty"><div class="empty-icon">🔄</div>Ijaralar topilmadi</div>';
+      document.getElementById('loansTable').innerHTML = `
+                <div class="flex flex-col items-center justify-center py-16 text-slate-400">
+                    <svg class="w-10 h-10 mb-3 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <p class="text-sm font-medium">Ijaralar topilmadi</p>
+                </div>`;
       return;
     }
-    document.getElementById('loansTable').innerHTML = `
-      <table>
-        <thead><tr>
-          <th>Kitob</th><th>A'zo</th><th>Xodim</th><th>Ijara sanasi</th><th>Qaytarish</th><th>Holat</th><th>Jarima</th><th>Amal</th>
-        </tr></thead>
-        <tbody>
-          ${state.loans.map(l => {
-            const returned = !!l.returnDate;
-            const overdue = !returned && new Date(l.dueDate) < new Date();
-            const badge = returned ? 'badge-green' : overdue ? 'badge-red' : 'badge-yellow';
-            const status = returned ? 'Qaytarildi' : overdue ? 'Muddati o\'tgan' : 'Faol';
-            return `<tr>
-              <td style="font-weight:500;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(l.book?.title || '—')}</td>
-              <td class="text-sm">${esc(l.member?.fullName || '—')}</td>
-              <td class="text-sm text-muted">${esc(l.staff?.fullName || '—')}</td>
-              <td class="mono text-muted" style="font-size:0.78rem">${fmtDate(l.loanDate)}</td>
-              <td class="mono text-muted" style="font-size:0.78rem">${fmtDate(l.dueDate)}</td>
-              <td><span class="badge ${badge}">${status}</span></td>
-              <td class="mono text-sm">${l.fineAmount ? l.fineAmount.toLocaleString() + ' so\'m' : '—'}</td>
-              <td>
-                ${!returned ? `<button class="btn btn-ghost btn-sm" onclick="openReturn('${l.id}','${esc((l.book?.title||'').replace(/'/g,"\\'"))}')">Qaytarish</button>` : ''}
-              </td>
+
+    const rows = state.loans.map(l => {
+      const returned = !!l.returnDate;
+      const overdue = !returned && new Date(l.dueDate) < new Date();
+      const badgeClass = returned
+              ? 'bg-green-100 text-green-700'
+              : overdue
+                      ? 'bg-red-100 text-red-700'
+                      : 'bg-amber-100 text-amber-700';
+      const status = returned ? 'Qaytarildi' : overdue ? 'Muddati o\'tgan' : 'Faol';
+
+      return `<tr class="table-row border-b border-slate-50 last:border-0">
+                <td class="px-5 py-3.5 max-w-[160px]">
+                    <p class="text-sm font-medium text-slate-800 truncate">${esc(l.movie?.title || '—')}</p>
+                </td>
+                <td class="px-5 py-3.5">
+                    <p class="text-sm text-slate-700">${esc(l.member?.fullName || '—')}</p>
+                </td>
+                <td class="px-5 py-3.5">
+                    <p class="text-sm text-slate-500">${esc(l.staff?.fullName || '—')}</p>
+                </td>
+                <td class="px-5 py-3.5">
+                    <p class="text-xs text-slate-500 font-mono">${fmtDate(l.loanDate)}</p>
+                </td>
+                <td class="px-5 py-3.5">
+                    <p class="text-xs font-mono ${overdue ? 'text-red-500 font-semibold' : 'text-slate-500'}">${fmtDate(l.dueDate)}</p>
+                </td>
+                <td class="px-5 py-3.5">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${badgeClass}">${status}</span>
+                </td>
+                <td class="px-5 py-3.5">
+                    <p class="text-sm font-mono ${l.fineAmount ? 'text-red-600 font-semibold' : 'text-slate-400'}">
+                        ${l.fineAmount ? l.fineAmount.toLocaleString() + ' so\'m' : '—'}
+                    </p>
+                </td>
+                <td class="px-5 py-3.5 text-right">
+                    ${!returned ? `
+                    <button onclick="openReturn('${l.id}','${esc((l.movie?.title||'').replace(/'/g,"\\'")}') "
+                        class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+                        Qaytarish
+                    </button>` : '<span class="text-xs text-slate-300">—</span>'}
+                </td>
             </tr>`;
-          }).join('')}
-        </tbody>
-      </table>`;
+    }).join('');
+
+    document.getElementById('loansTable').innerHTML = `
+            <div class="overflow-x-auto fade-in">
+            <table class="w-full text-left min-w-[900px]">
+                <thead>
+                    <tr class="border-b border-slate-100 bg-slate-50/60">
+                        <th class="px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Film</th>
+                        <th class="px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">A'zo</th>
+                        <th class="px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Xodim</th>
+                        <th class="px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Ijara sanasi</th>
+                        <th class="px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Qaytarish</th>
+                        <th class="px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Holat</th>
+                        <th class="px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Jarima</th>
+                        <th class="px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right">Amal</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+            </div>`;
   }
 
-  function renderPagination(total) {
-    const p = document.getElementById('pagination');
-    if (total <= 1) { p.innerHTML = ''; return; }
-    let html = `<button onclick="goPage(${state.page-1})" ${state.page===0?'disabled':''}>← Oldingi</button>`;
-    const start = Math.max(0, state.page - 2), end = Math.min(total - 1, state.page + 2);
-    for (let i = start; i <= end; i++) html += `<button class="${i===state.page?'active':''}" onclick="goPage(${i})">${i+1}</button>`;
-    html += `<button onclick="goPage(${state.page+1})" ${state.page>=total-1?'disabled':''}>Keyingi →</button>`;
-    html += `<span class="info">Jami: ${state.total}</span>`;
-    p.innerHTML = html;
+  function renderPagination(totalPages) {
+    const wrap = document.getElementById('paginationWrap');
+    if (totalPages <= 1) { wrap.style.display = 'none'; return; }
+    wrap.style.display = 'flex';
+    document.getElementById('pageInfo').textContent = `${state.page + 1} / ${totalPages} sahifa • Jami: ${state.total}`;
+    const start = Math.max(0, state.page - 2), end = Math.min(totalPages - 1, state.page + 2);
+    let html = `<button onclick="goPage(${state.page-1})" ${state.page===0?'disabled':''} class="px-3 py-1.5 text-xs font-medium border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">← Oldingi</button>`;
+    for (let i = start; i <= end; i++) {
+      html += `<button onclick="goPage(${i})" class="px-3 py-1.5 text-xs font-medium border rounded-lg transition-colors ${i===state.page ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}">${i+1}</button>`;
+    }
+    html += `<button onclick="goPage(${state.page+1})" ${state.page>=totalPages-1?'disabled':''} class="px-3 py-1.5 text-xs font-medium border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Keyingi →</button>`;
+    document.getElementById('pagination').innerHTML = html;
   }
   function goPage(p) { state.page = p; loadLoans(); }
 
-  // ── LOAD SELECTS ─────────────────────────────────────────
-  async function loadSelects() {
-    // Books (available only)
-    const bRes = await api('GET', '/api/v1/books?size=200');
+  async function openCreateModal() {
+    document.getElementById('createAlert').innerHTML = '';
+    openModal('createModal');
+
+    // Load selects
+    const bRes = await api('GET', '/api/v1/movies?size=200');
     if (bRes && bRes.ok) {
-      const books = ((await bRes.json()).content || []).filter(b => b.availableCopies > 0);
-      const sel = document.getElementById('c_bookId');
-      sel.innerHTML = '<option value="">Tanlang...</option>' +
-        books.map(b => `<option value="${b.id}">${esc(b.title)} (${b.availableCopies} nusxa)</option>`).join('');
+      const movies = ((await bRes.json()).content || []).filter(b => b.availableCopies > 0);
+      document.getElementById('c_movieId').innerHTML = '<option value="">Tanlang...</option>' +
+              movies.map(b => `<option value="${b.id}">${esc(b.title)} (${b.availableCopies} nusxa)</option>`).join('');
     }
 
-    // Users
     const uRes = await api('GET', '/api/v1/users?size=200');
     if (uRes && uRes.ok) {
       const users = (await uRes.json()).content || [];
-      const members = users.filter(u => u.role === 'MEMBER');
-      const staff = users.filter(u => u.role === 'STAFF' || u.role === 'ADMIN');
-
       document.getElementById('c_memberId').innerHTML = '<option value="">Tanlang...</option>' +
-        members.map(u => `<option value="${u.id}">${esc(u.fullName)}</option>`).join('');
-
+              users.filter(u => u.role === 'MEMBER').map(u => `<option value="${u.id}">${esc(u.fullName)}</option>`).join('');
       document.getElementById('c_staffId').innerHTML = '<option value="">Tanlang...</option>' +
-        staff.map(u => `<option value="${u.id}">${esc(u.fullName)}</option>`).join('');
+              users.filter(u => u.role === 'STAFF' || u.role === 'ADMIN').map(u => `<option value="${u.id}">${esc(u.fullName)}</option>`).join('');
     }
 
-    // Default due date = 2 weeks from now
     const due = new Date(); due.setDate(due.getDate() + 14);
     document.getElementById('c_dueDate').value = due.toISOString().slice(0,16);
   }
 
   async function createLoan() {
-    const bookId = document.getElementById('c_bookId').value;
+    const movieId  = document.getElementById('c_movieId').value;
     const memberId = document.getElementById('c_memberId').value;
-    const staffId = document.getElementById('c_staffId').value;
-    const dueDate = document.getElementById('c_dueDate').value;
-
-    if (!bookId || !memberId || !staffId || !dueDate) {
-      document.getElementById('createAlert').innerHTML = '<div class="alert alert-error">Barcha maydonlarni to\'ldiring</div>';
-      return;
-    }
-
-    const res = await api('POST', '/api/v1/loans', {
-      bookId, memberId, staffId,
-      dueDate: new Date(dueDate).toISOString()
-    });
-
+    const staffId  = document.getElementById('c_staffId').value;
+    const dueDate  = document.getElementById('c_dueDate').value;
+    if (!movieId || !memberId || !staffId || !dueDate) { showAlert('createAlert', 'Barcha maydonlarni to\'ldiring'); return; }
+    const res = await api('POST', '/api/v1/loans', { movieId, memberId, staffId, dueDate: new Date(dueDate).toISOString() });
     if (!res) return;
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      document.getElementById('createAlert').innerHTML = `<div class="alert alert-error">${err.message || 'Xatolik'}</div>`;
-      return;
-    }
+    if (!res.ok) { const err = await res.json().catch(()=>({})); showAlert('createAlert', err.message||'Xatolik'); return; }
     closeModal('createModal');
-    document.getElementById('createAlert').innerHTML = '';
-    toast('Ijara yaratildi');
+    showToast('Ijara muvaffaqiyatli yaratildi', 'success');
     loadLoans();
   }
 
-  function openReturn(id, bookName) {
+  function openReturn(id, movieName) {
     returningId = id;
-    document.getElementById('returnBookName').textContent = bookName;
+    document.getElementById('returnMovieName').textContent = movieName;
     document.getElementById('returnAlert').innerHTML = '';
     document.getElementById('r_fine').value = '';
-    const now = new Date();
-    document.getElementById('r_returnDate').value = now.toISOString().slice(0,16);
+    document.getElementById('r_returnDate').value = new Date().toISOString().slice(0,16);
     openModal('returnModal');
   }
 
   async function returnBook() {
     const returnDate = document.getElementById('r_returnDate').value;
     const fineAmount = parseFloat(document.getElementById('r_fine').value) || 0;
-
     const body = {};
     if (returnDate) body.returnDate = new Date(returnDate).toISOString();
     if (fineAmount > 0) body.fineAmount = fineAmount;
-
     const res = await api('PUT', `/api/v1/loans/${returningId}/return`, body);
     if (!res) return;
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      document.getElementById('returnAlert').innerHTML = `<div class="alert alert-error">${err.message || 'Xatolik'}</div>`;
-      return;
-    }
+    if (!res.ok) { const err = await res.json().catch(()=>({})); showAlert('returnAlert', err.message||'Xatolik'); return; }
     closeModal('returnModal');
-    toast('Kitob qaytarildi', 'success');
+    showToast('Film muvaffaqiyatli qaytarildi', 'success');
     loadLoans();
   }
 
   function fmtDate(iso) {
     if (!iso) return '—';
-    const d = new Date(iso);
-    return d.toLocaleDateString('uz-UZ', { day:'2-digit', month:'2-digit', year:'numeric' });
+    return new Date(iso).toLocaleDateString('uz-UZ', { day:'2-digit', month:'2-digit', year:'numeric' });
   }
-  function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-  loadSelects();
+  function openModal(id) { document.getElementById(id).classList.add('open'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+  document.querySelectorAll('.modal-backdrop').forEach(el => {
+    el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+  });
+
+  function showAlert(id, msg) {
+    document.getElementById(id).innerHTML = `<div class="flex items-center gap-2 bg-red-50 text-red-600 text-xs font-medium p-3 rounded-lg border border-red-100 mb-1"><svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>${msg}</div>`;
+  }
+  function showToast(msg, type='success') {
+    const t = document.getElementById('toast');
+    const el = document.createElement('div');
+    el.className = `toast-item ${type==='success' ? 'bg-slate-800 text-white' : 'bg-red-500 text-white'}`;
+    el.textContent = msg;
+    t.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+  }
+
   loadLoans();
 </script>
-</section>
-</div>
 </body>
 </html>

@@ -7,43 +7,43 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.vv.vertexlib.base.BaseService;
-import uz.vv.vertexlib.dtos.requests.BookCreateRequest;
-import uz.vv.vertexlib.dtos.requests.BookUpdateRequest;
-import uz.vv.vertexlib.dtos.responses.BookResponse;
-import uz.vv.vertexlib.entities.Book;
+import uz.vv.vertexlib.dtos.requests.MovieCreateRequest;
+import uz.vv.vertexlib.dtos.requests.MovieUpdateRequest;
+import uz.vv.vertexlib.dtos.responses.MovieResponse;
+import uz.vv.vertexlib.entities.Movie;
 import uz.vv.vertexlib.exceptions.AlreadyExistsException;
 import uz.vv.vertexlib.exceptions.ResourceNotFoundException;
-import uz.vv.vertexlib.mappers.BookMapper;
-import uz.vv.vertexlib.repositories.BookRepository;
+import uz.vv.vertexlib.mappers.MovieMapper;
+import uz.vv.vertexlib.repositories.MovieRepository;
 import uz.vv.vertexlib.utils.SearchSpecification;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class BookService implements BaseService<BookCreateRequest, BookResponse, String> {
+public class MovieService implements BaseService<MovieCreateRequest, MovieResponse, String> {
 
-    private final BookRepository repository;
-    private final BookMapper mapper;
+    private final MovieRepository repository;
+    private final MovieMapper mapper;
 
     @Override
     @Transactional
-    public BookResponse create(BookCreateRequest request) {
+    public MovieResponse create(MovieCreateRequest request) {
         if (repository.existsByIsbn(request.isbn())) {
-            throw new AlreadyExistsException("Kitob", "ISBN", request.isbn());
+            throw new AlreadyExistsException("Film", "ISBN", request.isbn());
         }
-        Book entity = mapper.toEntity(request);
+        Movie entity = mapper.toEntity(request);
         return mapper.toResponse(repository.save(entity));
     }
 
     @Override
     @Transactional
-    public BookResponse update(String id, BookCreateRequest request) {
-        Book entity = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Kitob", "id", id));
+    public MovieResponse update(String id, MovieCreateRequest request) {
+        Movie entity = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Film", "id", id));
 
         if (!entity.getIsbn().equals(request.isbn()) && repository.existsByIsbn(request.isbn())) {
-            throw new AlreadyExistsException("Kitob", "ISBN", request.isbn());
+            throw new AlreadyExistsException("Film", "ISBN", request.isbn());
         }
 
         entity.setTitle(request.title());
@@ -58,34 +58,34 @@ public class BookService implements BaseService<BookCreateRequest, BookResponse,
     }
 
     @Transactional
-    public BookResponse updateDetailed(String id, BookUpdateRequest request) {
-        Book entity = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Kitob", "id", id));
+    public MovieResponse updateDetailed(String id, MovieUpdateRequest request) {
+        Movie entity = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Film", "id", id));
         mapper.updateEntityFromDto(request, entity);
         return mapper.toResponse(repository.save(entity));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public BookResponse getById(String id) {
+    public MovieResponse getById(String id) {
         return repository.findById(id)
                 .map(mapper::toResponse)
-                .orElseThrow(() -> new ResourceNotFoundException("Kitob", "id", id));
+                .orElseThrow(() -> new ResourceNotFoundException("Film", "id", id));
     }
 
     @Override
     @Transactional
     public void delete(String id) {
         if (!repository.existsById(id)) {
-            throw new ResourceNotFoundException("Kitob", "id", id);
+            throw new ResourceNotFoundException("Film", "id", id);
         }
         repository.deleteById(id);
     }
 
     @Transactional(readOnly = true)
-    public Page<BookResponse> getAll(String search, Pageable pageable) {
+    public Page<MovieResponse> getAll(String search, Pageable pageable) {
         List<String> fields = List.of("title", "author", "isbn", "genre.name");
-        Specification<Book> spec = SearchSpecification.globalStringSearch(search, fields);
+        Specification<Movie> spec = SearchSpecification.globalStringSearch(search, fields);
         return repository.findAll(spec, pageable).map(mapper::toResponse);
     }
 }

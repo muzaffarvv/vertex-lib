@@ -4,7 +4,7 @@ import java.time.Instant;
 
 public record LoanResponse(
         String id,
-        BookShortResponse book,
+        MovieShortResponse movie,
         UserShortResponse member,
         UserShortResponse staff,
         Instant loanDate,

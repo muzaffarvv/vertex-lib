@@ -5,7 +5,7 @@ import java.time.Instant;
 
 public record LoanCreateRequest(
         @NotBlank(message = "Kitob bo'sh bo'lishi mumkin emas")
-        String bookId,
+        String movieId,
 
         @NotBlank(message = "A'zo bo'sh bo'lishi mumkin emas")
         String memberId,

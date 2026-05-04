@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import uz.vv.vertexlib.dtos.requests.LoanCreateRequest;
 import uz.vv.vertexlib.dtos.requests.LoanUpdateRequest;
 import uz.vv.vertexlib.dtos.responses.LoanResponse;
-import uz.vv.vertexlib.entities.Book;
+import uz.vv.vertexlib.entities.Movie;
 import uz.vv.vertexlib.entities.Loans;
 import uz.vv.vertexlib.entities.User;
 import uz.vv.vertexlib.enums.UserRole;
@@ -17,7 +17,7 @@ import uz.vv.vertexlib.exceptions.BadRequestException;
 import uz.vv.vertexlib.exceptions.InsufficientStockException;
 import uz.vv.vertexlib.exceptions.ResourceNotFoundException;
 import uz.vv.vertexlib.mappers.LoanMapper;
-import uz.vv.vertexlib.repositories.BookRepository;
+import uz.vv.vertexlib.repositories.MovieRepository;
 import uz.vv.vertexlib.repositories.LoanRepository;
 import uz.vv.vertexlib.repositories.UserRepository;
 import uz.vv.vertexlib.security.SecurityUtils;
@@ -31,17 +31,17 @@ import java.util.List;
 public class LoanService {
 
     private final LoanRepository loanRepository;
-    private final BookRepository bookRepository;
+    private final MovieRepository movieRepository;
     private final UserRepository userRepository;
     private final LoanMapper mapper;
 
     @Transactional
     public LoanResponse createLoan(LoanCreateRequest request) {
-        Book book = bookRepository.findById(request.bookId())
-                .orElseThrow(() -> new ResourceNotFoundException("Kitob", "id", request.bookId()));
+        Movie movie = movieRepository.findById(request.movieId())
+                .orElseThrow(() -> new ResourceNotFoundException("Kitob", "id", request.movieId()));
 
-        if (book.getAvailableCopies() <= 0) {
-            throw InsufficientStockException.forBook(book.getTitle());
+        if (movie.getAvailableCopies() <= 0) {
+            throw InsufficientStockException.forMovie(movie.getTitle());
         }
 
         User member = userRepository.findById(request.memberId())
@@ -56,15 +56,15 @@ public class LoanService {
             throw new BadRequestException("Foydalanuvchi xodim (STAFF) bo'lishi kerak: " + request.staffId());
         }
 
-        book.setAvailableCopies(book.getAvailableCopies() - 1);
-        bookRepository.save(book);
+        movie.setAvailableCopies(movie.getAvailableCopies() - 1);
+        movieRepository.save(movie);
 
         Loans loan = mapper.toEntity(request);
         return mapper.toResponse(loanRepository.save(loan));
     }
 
     @Transactional
-    public LoanResponse returnBook(String loanId, LoanUpdateRequest request) {
+    public LoanResponse returnMovie(String loanId, LoanUpdateRequest request) {
         Loans loan = loanRepository.findById(loanId)
                 .orElseThrow(() -> new ResourceNotFoundException("Ijara", "id", loanId));
 
@@ -75,9 +75,9 @@ public class LoanService {
         loan.setReturnDate(request.returnDate() != null ? request.returnDate() : Instant.now());
         loan.setFineAmount(request.fineAmount());
 
-        Book book = loan.getBook();
-        book.setAvailableCopies(book.getAvailableCopies() + 1);
-        bookRepository.save(book);
+        Movie movie = loan.getMovie();
+        movie.setAvailableCopies(movie.getAvailableCopies() + 1);
+        movieRepository.save(movie);
 
         return mapper.toResponse(loanRepository.save(loan));
     }
@@ -91,7 +91,7 @@ public class LoanService {
 
     @Transactional(readOnly = true)
     public Page<LoanResponse> getAll(String search, Pageable pageable) {
-        List<String> fields = List.of("book.title", "member.fullName", "member.phoneNumber","staff.fullName", "staff.phoneNumber");
+        List<String> fields = List.of("movie.title", "member.fullName", "member.phoneNumber","staff.fullName", "staff.phoneNumber");
         Specification<Loans> spec = SearchSpecification.globalStringSearch(search, fields);
         return loanRepository.findAll(spec, pageable).map(mapper::toResponse);
     }

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Muvaffaqiyatli — VertexLib</title>
+    <script src="/js/api.js"></script>
+</head>
+<body>
+    <div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif;">
+        <p>Yuklanmoqda...</p>
+    </div>
+    
+    <script th:inline="javascript">
+        const token = [[${token}]];
+        if (token) {
+            api.setToken(token);
+            window.location.href = '/dashboard';
+        } else {
+            window.location.href = '/login';
+        }
+    </script>
+</body>
+</html>
