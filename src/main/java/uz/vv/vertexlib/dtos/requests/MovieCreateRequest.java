@@ -2,7 +2,7 @@ package uz.vv.vertexlib.dtos.requests;
 
 import jakarta.validation.constraints.*;
 
-public record BookCreateRequest(
+public record MovieCreateRequest(
         @NotBlank(message = "Kitob nomi kiritilishi shart")
         @Size(max = 172, message = "Kitob nomi 172 belgidan oshmasligi kerak")
         String title,

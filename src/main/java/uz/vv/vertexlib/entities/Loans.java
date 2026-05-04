@@ -12,8 +12,8 @@ import java.time.Instant;
 public class Loans extends BaseEntity {
 
     @ManyToOne
-    @JoinColumn(name = "book_id", nullable = false)
-    private Book book;
+    @JoinColumn(name = "movie_id", nullable = false)
+    private Movie movie;
 
     @ManyToOne
     @JoinColumn(name = "member_id", nullable = false)

@@ -1,6 +1,5 @@
 /* VertexLib — main.css
-   Bu fayl layout fragmentida ham inline tarzda mavjud.
-   Spring Boot static resources: src/main/resources/static/css/main.css
+   Spring Boot static resources: src/main/resources/static/main.css
 */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }

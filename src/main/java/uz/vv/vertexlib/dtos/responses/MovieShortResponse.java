@@ -1,12 +1,8 @@
 package uz.vv.vertexlib.dtos.responses;
 
-public record BookResponse(
+public record MovieShortResponse(
         String id,
         String title,
-        String isbn,
         String author,
-        GenreResponse genre,
-        Integer publishedYear,
-        Integer totalCopies,
         Integer availableCopies
 ) {}

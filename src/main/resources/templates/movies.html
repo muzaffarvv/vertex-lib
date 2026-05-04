@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="uz" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: header('Foydalanuvchilar')}">
+<head th:replace="~{fragments/layout :: header('Filmlar')}">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Foydalanuvchilar — VertexLib</title>
+  <title>Filmlar — VertexLib</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -29,7 +29,7 @@
     [x-cloak] { display: none !important; }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen" x-data="usersApp()" x-init="init()">
+<body class="bg-slate-50 text-slate-800 min-h-screen" x-data="moviesApp()" x-init="init()">
 
 <div class="flex h-screen overflow-hidden">
 
@@ -52,7 +52,7 @@
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
         Dashboard
       </a>
-      <a href="/movies" class="sidebar-link">
+      <a href="/movies" class="sidebar-link active">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
         Filmlar
       </a>
@@ -60,7 +60,7 @@
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         Ijaralar
       </a>
-      <a href="/users" class="sidebar-link active">
+      <a href="/users" class="sidebar-link">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
         A'zolar
       </a>
@@ -93,130 +93,117 @@
     <!-- Top bar -->
     <div class="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-slate-100 px-8 py-4 flex items-center justify-between">
       <div>
-        <h1 class="text-lg font-bold text-slate-900 leading-tight">Foydalanuvchilar</h1>
-        <p class="text-xs text-slate-400 mt-0.5">Tizim foydalanuvchilari boshqaruvi</p>
+        <h1 class="text-lg font-bold text-slate-900 leading-tight">Filmlar</h1>
+        <p class="text-xs text-slate-400 mt-0.5">Kutubxona katalogi</p>
       </div>
       <div class="flex items-center gap-3">
-        <button @click="loadUsers()"
+        <button @click="loadMovies()"
                 class="h-9 w-9 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-indigo-600 transition-colors"
                 :class="loading ? 'animate-spin text-indigo-400' : ''">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
         </button>
-        <button @click="openCreateModal()"
-                class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors shadow-sm">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-          Foydalanuvchi qo'shish
-        </button>
+        <template x-if="isStaff">
+          <button @click="openCreateModal()"
+                  class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors shadow-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Film qo'shish
+          </button>
+        </template>
       </div>
     </div>
 
     <div class="p-8 space-y-6">
 
-      <!-- Filter bar -->
-      <div class="flex items-center gap-3">
-        <div class="flex bg-white border border-slate-200 rounded-lg p-1 gap-1">
-          <button @click="filterRole = ''; loadUsers()"
-                  class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
-                  :class="filterRole === '' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'">
-            Barchasi
-          </button>
-          <button @click="filterRole = 'MEMBER'; loadUsers()"
-                  class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
-                  :class="filterRole === 'MEMBER' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'">
-            A'zolar
-          </button>
-          <button @click="filterRole = 'STAFF'; loadUsers()"
-                  class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
-                  :class="filterRole === 'STAFF' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'">
-            Xodimlar
-          </button>
-        </div>
-        <span class="text-sm text-slate-400" x-show="!loading" x-cloak>
-                    Jami: <span class="font-semibold text-slate-700" x-text="totalElements">0</span>
-                </span>
+      <!-- Search bar -->
+      <div class="relative max-w-sm">
+        <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <input type="text" x-model="searchQuery" @input.debounce.250ms="filterMovies()"
+               placeholder="Film nomi yoki muallif..."
+               class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all bg-white">
       </div>
 
       <!-- Table card -->
       <div class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
 
-        <!-- Loading skeleton -->
+        <!-- Skeleton -->
         <template x-if="loading">
           <div class="divide-y divide-slate-50">
             <div class="px-6 py-3 border-b border-slate-100 bg-slate-50/40">
-              <div class="grid grid-cols-4 gap-4">
-                <div class="skeleton h-3.5 bg-slate-100 rounded w-12"></div>
-                <div class="skeleton h-3.5 bg-slate-100 rounded w-16"></div>
-                <div class="skeleton h-3.5 bg-slate-100 rounded w-10"></div>
-                <div class="skeleton h-3.5 bg-slate-100 rounded w-14"></div>
+              <div class="grid grid-cols-6 gap-4">
+                <template x-for="i in [1,2,3,4,5,6]" :key="i">
+                  <div class="skeleton h-3.5 bg-slate-100 rounded"></div>
+                </template>
               </div>
             </div>
             <template x-for="i in [1,2,3,4,5,6,7,8]" :key="i">
-              <div class="px-6 py-3.5 grid grid-cols-4 gap-4 items-center">
-                <div class="skeleton h-4 bg-slate-100 rounded w-32"></div>
-                <div class="skeleton h-4 bg-slate-100 rounded w-28"></div>
+              <div class="px-6 py-3.5 grid grid-cols-6 gap-4 items-center">
+                <div class="col-span-2 skeleton h-4 bg-slate-100 rounded w-32"></div>
+                <div class="skeleton h-4 bg-slate-100 rounded w-24"></div>
+                <div class="skeleton h-4 bg-slate-100 rounded w-28 font-mono"></div>
                 <div class="skeleton h-5 bg-slate-100 rounded-full w-16"></div>
-                <div class="flex gap-2">
-                  <div class="skeleton h-7 bg-slate-100 rounded-lg w-20"></div>
-                  <div class="skeleton h-7 bg-slate-100 rounded-lg w-16"></div>
-                </div>
+                <div class="skeleton h-5 bg-slate-100 rounded-full w-14"></div>
               </div>
             </template>
           </div>
         </template>
 
-        <!-- Empty state -->
-        <template x-if="!loading && users.length === 0">
+        <!-- Empty -->
+        <template x-if="!loading && displayMovies.length === 0">
           <div class="flex flex-col items-center justify-center py-20 text-slate-400">
-            <svg class="w-12 h-12 mb-3 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-            <p class="text-sm font-medium">Foydalanuvchilar topilmadi</p>
+            <svg class="w-12 h-12 mb-3 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+            <p class="text-sm font-medium">Filmlar topilmadi</p>
           </div>
         </template>
 
         <!-- Table -->
-        <template x-if="!loading && users.length > 0">
+        <template x-if="!loading && displayMovies.length > 0">
           <div class="overflow-x-auto">
             <table class="w-full text-left">
               <thead>
               <tr class="border-b border-slate-100 bg-slate-50/40">
-                <th class="px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Ism</th>
-                <th class="px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Telefon</th>
-                <th class="px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Rol</th>
-                <th class="px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Amallar</th>
+                <th class="px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Nomi</th>
+                <th class="px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Muallif</th>
+                <th class="px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">ISBN</th>
+                <th class="px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Janr</th>
+                <th class="px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Yil</th>
+                <th class="px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Nusxa</th>
+                <template x-if="isStaff">
+                  <th class="px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Amallar</th>
+                </template>
               </tr>
               </thead>
               <tbody class="divide-y divide-slate-50">
-              <template x-for="u in users" :key="u.id">
+              <template x-for="b in displayMovies" :key="b.id">
                 <tr class="row-hover">
+                  <td class="px-6 py-3.5 text-sm font-medium text-slate-800" x-text="b.title || '—'"></td>
+                  <td class="px-6 py-3.5 text-sm text-slate-500" x-text="b.author || '—'"></td>
+                  <td class="px-6 py-3.5 text-xs text-slate-400 font-mono" x-text="b.isbn || '—'"></td>
                   <td class="px-6 py-3.5">
-                    <div class="flex items-center gap-3">
-                      <div class="h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                           :class="u.role === 'STAFF' || u.role === 'ADMIN' ? 'bg-indigo-100 text-indigo-600' : 'bg-green-100 text-green-600'"
-                           x-text="(u.fullName || '?').charAt(0).toUpperCase()"></div>
-                      <span class="text-sm font-medium text-slate-800" x-text="u.fullName || '—'"></span>
-                    </div>
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700"
+                                                  x-text="b.genre?.name || '—'"></span>
                   </td>
-                  <td class="px-6 py-3.5 text-sm text-slate-500 font-mono" x-text="u.phoneNumber || '—'"></td>
+                  <td class="px-6 py-3.5 text-sm text-slate-500 font-mono" x-text="b.publishedYear || '—'"></td>
                   <td class="px-6 py-3.5">
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                                                  :class="u.role === 'STAFF' || u.role === 'ADMIN'
-                                                    ? 'bg-indigo-100 text-indigo-700'
-                                                    : 'bg-green-100 text-green-700'"
-                                                  x-text="u.role"></span>
+                                                  :class="b.availableCopies > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'"
+                                                  x-text="(b.availableCopies || 0) + '/' + (b.totalCopies || 0)"></span>
                   </td>
-                  <td class="px-6 py-3.5">
-                    <div class="flex items-center gap-2">
-                      <button @click="openEdit(u)"
-                              class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-200 transition-colors">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                        Tahrirlash
-                      </button>
-                      <button @click="openDelete(u)"
-                              class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium border border-red-100 text-red-500 hover:bg-red-50 hover:border-red-200 transition-colors">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                        O'chirish
-                      </button>
-                    </div>
-                  </td>
+                  <template x-if="isStaff">
+                    <td class="px-6 py-3.5">
+                      <div class="flex items-center gap-2">
+                        <button @click="openEdit(b)"
+                                class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-200 transition-colors">
+                          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                          Tahrirlash
+                        </button>
+                        <button @click="openDelete(b)"
+                                class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium border border-red-100 text-red-500 hover:bg-red-50 hover:border-red-200 transition-colors">
+                          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                          O'chirish
+                        </button>
+                      </div>
+                    </td>
+                  </template>
                 </tr>
               </template>
               </tbody>
@@ -227,12 +214,10 @@
         <!-- Pagination -->
         <template x-if="totalPages > 1">
           <div class="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
-            <span class="text-xs text-slate-400">Sahifa <span class="font-medium text-slate-600" x-text="page + 1"></span> / <span x-text="totalPages"></span></span>
+            <span class="text-xs text-slate-400">Sahifa <span class="font-medium text-slate-600" x-text="page + 1"></span> / <span x-text="totalPages"></span> — Jami: <span class="font-medium text-slate-600" x-text="totalElements"></span></span>
             <div class="flex items-center gap-1">
               <button @click="goPage(page - 1)" :disabled="page === 0"
-                      class="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-sm">
-                ←
-              </button>
+                      class="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-sm">←</button>
               <template x-for="p in pageRange" :key="p">
                 <button @click="goPage(p)"
                         class="h-8 w-8 rounded-lg border text-sm font-medium transition-colors"
@@ -240,9 +225,7 @@
                         x-text="p + 1"></button>
               </template>
               <button @click="goPage(page + 1)" :disabled="page >= totalPages - 1"
-                      class="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-sm">
-                →
-              </button>
+                      class="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-sm">→</button>
             </div>
           </div>
         </template>
@@ -255,44 +238,58 @@
 <div x-show="showCreate" x-cloak
      class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4"
      @click.self="showCreate = false">
-  <div class="bg-white rounded-2xl shadow-xl w-full max-w-md" @click.stop>
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg" @click.stop>
     <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-      <h2 class="text-base font-semibold text-slate-900">Yangi foydalanuvchi</h2>
+      <h2 class="text-base font-semibold text-slate-900">Yangi film qo'shish</h2>
       <button @click="showCreate = false" class="h-8 w-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-colors">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
     </div>
     <div class="px-6 py-5 space-y-4">
-      <div x-show="createError" x-cloak class="flex items-center gap-2 p-3 bg-red-50 border border-red-100 rounded-lg text-sm text-red-600" x-text="createError"></div>
+      <div x-show="createError" x-cloak class="p-3 bg-red-50 border border-red-100 rounded-lg text-sm text-red-600" x-text="createError"></div>
       <div>
-        <label class="block text-xs font-semibold text-slate-600 mb-1.5">To'liq ism *</label>
-        <input type="text" x-model="form.fullName" maxlength="132" placeholder="Ism Familiya"
+        <label class="block text-xs font-semibold text-slate-600 mb-1.5">Film nomi *</label>
+        <input type="text" x-model="form.title" maxlength="172" placeholder="Film nomini kiriting"
                class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
       </div>
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Telefon *</label>
-          <input type="text" x-model="form.phoneNumber" placeholder="998XXXXXXXXX" maxlength="12"
+          <label class="block text-xs font-semibold text-slate-600 mb-1.5">ISBN *</label>
+          <input type="text" x-model="form.isbn" placeholder="9781234567890" maxlength="17"
                  class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
         </div>
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Rol *</label>
-          <select x-model="form.role"
+          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Muallif *</label>
+          <input type="text" x-model="form.author" maxlength="132" placeholder="Ism Familiya"
+                 class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Janr *</label>
+          <select x-model="form.genreId"
                   class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all bg-white">
-            <option value="MEMBER">A'zo (MEMBER)</option>
-            <option value="STAFF">Xodim (STAFF)</option>
+            <option value="">Tanlang...</option>
+            <template x-for="g in genres" :key="g.id">
+              <option :value="g.id" x-text="g.name"></option>
+            </template>
           </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Nashr yili *</label>
+          <input type="number" x-model="form.publishedYear" min="1000" max="2026" placeholder="2024"
+                 class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
         </div>
       </div>
       <div>
-        <label class="block text-xs font-semibold text-slate-600 mb-1.5">Parol *</label>
-        <input type="password" x-model="form.password" placeholder="Kamida 8 belgi"
+        <label class="block text-xs font-semibold text-slate-600 mb-1.5">Jami nusxalar *</label>
+        <input type="number" x-model="form.totalCopies" min="0" placeholder="1"
                class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
       </div>
     </div>
     <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50/50 rounded-b-2xl">
       <button @click="showCreate = false" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors">Bekor qilish</button>
-      <button @click="createUser()" :disabled="saving"
+      <button @click="createMovie()" :disabled="saving"
               class="px-4 py-2 rounded-lg text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-colors disabled:opacity-60">
         <span x-show="!saving">Saqlash</span>
         <span x-show="saving" x-cloak>Saqlanmoqda...</span>
@@ -305,44 +302,53 @@
 <div x-show="showEdit" x-cloak
      class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4"
      @click.self="showEdit = false">
-  <div class="bg-white rounded-2xl shadow-xl w-full max-w-md" @click.stop>
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg" @click.stop>
     <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-      <h2 class="text-base font-semibold text-slate-900">Foydalanuvchini tahrirlash</h2>
+      <h2 class="text-base font-semibold text-slate-900">Filmni tahrirlash</h2>
       <button @click="showEdit = false" class="h-8 w-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-colors">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
     </div>
     <div class="px-6 py-5 space-y-4">
-      <div x-show="editError" x-cloak class="flex items-center gap-2 p-3 bg-red-50 border border-red-100 rounded-lg text-sm text-red-600" x-text="editError"></div>
+      <div x-show="editError" x-cloak class="p-3 bg-red-50 border border-red-100 rounded-lg text-sm text-red-600" x-text="editError"></div>
       <div>
-        <label class="block text-xs font-semibold text-slate-600 mb-1.5">To'liq ism *</label>
-        <input type="text" x-model="editForm.fullName" maxlength="132"
+        <label class="block text-xs font-semibold text-slate-600 mb-1.5">Film nomi</label>
+        <input type="text" x-model="editForm.title" maxlength="172"
                class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
       </div>
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Telefon *</label>
-          <input type="text" x-model="editForm.phoneNumber" maxlength="12"
-                 class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
+          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Muallif</label>
+          <input type="text" x-model="editForm.author" maxlength="132"
+                 class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
         </div>
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Rol *</label>
-          <select x-model="editForm.role"
+          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Janr</label>
+          <select x-model="editForm.genreId"
                   class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all bg-white">
-            <option value="MEMBER">A'zo (MEMBER)</option>
-            <option value="STAFF">Xodim (STAFF)</option>
+            <option value="">O'zgartirmaslik</option>
+            <template x-for="g in genres" :key="g.id">
+              <option :value="g.id" x-text="g.name"></option>
+            </template>
           </select>
         </div>
       </div>
-      <div>
-        <label class="block text-xs font-semibold text-slate-600 mb-1.5">Yangi parol *</label>
-        <input type="password" x-model="editForm.password" placeholder="Yangi parol kiriting"
-               class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Nashr yili</label>
+          <input type="number" x-model="editForm.publishedYear" min="1000" max="2026"
+                 class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Jami nusxalar</label>
+          <input type="number" x-model="editForm.totalCopies" min="0"
+                 class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
+        </div>
       </div>
     </div>
     <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50/50 rounded-b-2xl">
       <button @click="showEdit = false" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors">Bekor qilish</button>
-      <button @click="updateUser()" :disabled="saving"
+      <button @click="updateMovie()" :disabled="saving"
               class="px-4 py-2 rounded-lg text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-colors disabled:opacity-60">
         <span x-show="!saving">Saqlash</span>
         <span x-show="saving" x-cloak>Saqlanmoqda...</span>
@@ -360,12 +366,12 @@
       <div class="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
         <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
       </div>
-      <h3 class="text-base font-semibold text-slate-900 mb-1">Foydalanuvchini o'chirish</h3>
-      <p class="text-sm text-slate-500"><span class="font-semibold text-slate-700" x-text="deleteTarget?.fullName"></span> ni o'chirmoqchimisiz? Bu amal qaytarilmaydi.</p>
+      <h3 class="text-base font-semibold text-slate-900 mb-1">Filmni o'chirish</h3>
+      <p class="text-sm text-slate-500"><span class="font-semibold text-slate-700" x-text="deleteTarget?.title"></span> ni o'chirmoqchimisiz? Bu amal qaytarilmaydi.</p>
     </div>
     <div class="flex items-center gap-3 px-6 py-4 border-t border-slate-100">
       <button @click="showDelete = false" class="flex-1 px-4 py-2 rounded-lg text-sm font-medium border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">Bekor qilish</button>
-      <button @click="deleteUser()" :disabled="saving"
+      <button @click="deleteMovie()" :disabled="saving"
               class="flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-red-500 hover:bg-red-600 text-white transition-colors disabled:opacity-60">
         <span x-show="!saving">O'chirish</span>
         <span x-show="saving" x-cloak>O'chirilmoqda...</span>
@@ -375,7 +381,13 @@
 </div>
 
 <!-- ===== TOAST ===== -->
-<div x-show="toast.visible" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+<div x-show="toast.visible" x-cloak
+     x-transition:enter="transition ease-out duration-300"
+     x-transition:enter-start="opacity-0 translate-y-2"
+     x-transition:enter-end="opacity-100 translate-y-0"
+     x-transition:leave="transition ease-in duration-200"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0"
      class="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-sm font-medium text-white"
      :class="toast.type === 'error' ? 'bg-red-500' : 'bg-emerald-500'">
   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -386,17 +398,20 @@
 </div>
 
 <script>
-  function usersApp() {
+  function moviesApp() {
     return {
       loading: true,
       saving: false,
-      users: [],
+      movies: [],
+      displayMovies: [],
+      genres: [],
       totalElements: 0,
       totalPages: 1,
       page: 0,
       size: 15,
-      filterRole: '',
+      searchQuery: '',
       pageRange: [],
+      isStaff: false,
       currentUserName: 'Admin',
 
       showCreate: false,
@@ -405,8 +420,8 @@
       createError: '',
       editError: '',
 
-      form: { fullName: '', phoneNumber: '', password: '', role: 'MEMBER' },
-      editForm: { fullName: '', phoneNumber: '', password: '', role: 'MEMBER' },
+      form: { title: '', isbn: '', author: '', genreId: '', publishedYear: '', totalCopies: '' },
+      editForm: { title: '', author: '', genreId: '', publishedYear: '', totalCopies: '' },
       editingId: null,
       deleteTarget: null,
 
@@ -415,31 +430,49 @@
       async init() {
         try {
           const me = typeof currentUser !== 'undefined' ? currentUser : null;
-          if (me) this.currentUserName = me.fullName || me.username || 'Admin';
-          if (me && me.role !== 'STAFF' && me.role !== 'ADMIN') {
-            window.location.href = '/dashboard';
-            return;
+          if (me) {
+            this.currentUserName = me.fullName || me.username || 'Admin';
+            this.isStaff = me.role === 'STAFF' || me.role === 'ADMIN';
           }
         } catch(e) {}
-        await this.loadUsers();
+        await Promise.all([this.loadGenres(), this.loadMovies()]);
       },
 
-      async loadUsers() {
+      async loadGenres() {
+        try {
+          const res = await api('GET', '/api/v1/genres?size=200');
+          if (res && res.ok) {
+            this.genres = (await res.json()).content || [];
+          }
+        } catch(e) {}
+      },
+
+      async loadMovies() {
         this.loading = true;
         try {
-          const roleParam = this.filterRole ? `&role=${this.filterRole}` : '';
-          const res = await api('GET', `/api/v1/users?page=${this.page}&size=${this.size}&sort=id,desc${roleParam}`);
+          const res = await api('GET', `/api/v1/movies?page=${this.page}&size=${this.size}&sort=id,desc`);
           if (!res || !res.ok) throw new Error();
           const data = await res.json();
-          this.users = data.content || [];
+          this.movies = data.content || [];
           this.totalElements = data.totalElements || 0;
           this.totalPages = data.totalPages || 1;
+          this.filterMovies();
           this.buildPageRange();
         } catch(e) {
-          this.users = [];
+          this.movies = [];
+          this.displayMovies = [];
         } finally {
           this.loading = false;
         }
+      },
+
+      filterMovies() {
+        const q = (this.searchQuery || '').toLowerCase();
+        this.displayMovies = q
+                ? this.movies.filter(b =>
+                        (b.title || '').toLowerCase().includes(q) ||
+                        (b.author || '').toLowerCase().includes(q))
+                : [...this.movies];
       },
 
       buildPageRange() {
@@ -452,76 +485,93 @@
       goPage(p) {
         if (p < 0 || p >= this.totalPages) return;
         this.page = p;
-        this.loadUsers();
+        this.loadMovies();
       },
 
       openCreateModal() {
-        this.form = { fullName: '', phoneNumber: '', password: '', role: 'MEMBER' };
+        this.form = { title: '', isbn: '', author: '', genreId: '', publishedYear: '', totalCopies: '' };
         this.createError = '';
         this.showCreate = true;
       },
 
-      async createUser() {
-        if (!this.form.fullName || !this.form.phoneNumber || !this.form.password || !this.form.role) {
-          this.createError = "Barcha maydonlarni to'ldiring";
+      async createMovie() {
+        if (!this.form.title || !this.form.isbn || !this.form.author || !this.form.genreId) {
+          this.createError = "Barcha majburiy maydonlarni to'ldiring";
           return;
         }
         this.saving = true;
         try {
-          const res = await api('POST', '/api/v1/users', this.form);
+          const body = {
+            title: this.form.title,
+            isbn: this.form.isbn,
+            author: this.form.author,
+            genreId: this.form.genreId,
+            publishedYear: parseInt(this.form.publishedYear) || null,
+            totalCopies: parseInt(this.form.totalCopies) || 0
+          };
+          const res = await api('POST', '/api/v1/movies', body);
           if (!res || !res.ok) {
             const err = await res.json().catch(() => ({}));
             this.createError = err.message || 'Xatolik yuz berdi';
             return;
           }
           this.showCreate = false;
-          this.showToast("Foydalanuvchi qo'shildi");
-          this.loadUsers();
+          this.showToast("Film muvaffaqiyatli qo'shildi");
+          this.loadMovies();
         } finally {
           this.saving = false;
         }
       },
 
-      openEdit(u) {
-        this.editingId = u.id;
-        this.editForm = { fullName: u.fullName || '', phoneNumber: u.phoneNumber || '', password: '', role: u.role || 'MEMBER' };
+      openEdit(b) {
+        this.editingId = b.id;
+        this.editForm = {
+          title: b.title || '',
+          author: b.author || '',
+          genreId: b.genre?.id || '',
+          publishedYear: b.publishedYear || '',
+          totalCopies: b.totalCopies ?? ''
+        };
         this.editError = '';
         this.showEdit = true;
       },
 
-      async updateUser() {
-        if (!this.editForm.fullName || !this.editForm.phoneNumber || !this.editForm.password || !this.editForm.role) {
-          this.editError = "Barcha maydonlarni to'ldiring";
-          return;
-        }
+      async updateMovie() {
         this.saving = true;
         try {
-          const res = await api('PUT', `/api/v1/users/${this.editingId}`, this.editForm);
+          const body = {};
+          if (this.editForm.title) body.title = this.editForm.title;
+          if (this.editForm.author) body.author = this.editForm.author;
+          if (this.editForm.genreId) body.genreId = this.editForm.genreId;
+          if (this.editForm.publishedYear) body.publishedYear = parseInt(this.editForm.publishedYear);
+          if (this.editForm.totalCopies !== '') body.totalCopies = parseInt(this.editForm.totalCopies);
+
+          const res = await api('PATCH', `/api/v1/movies/${this.editingId}/details`, body);
           if (!res || !res.ok) {
             const err = await res.json().catch(() => ({}));
             this.editError = err.message || 'Xatolik yuz berdi';
             return;
           }
           this.showEdit = false;
-          this.showToast('Foydalanuvchi yangilandi');
-          this.loadUsers();
+          this.showToast('Film yangilandi');
+          this.loadMovies();
         } finally {
           this.saving = false;
         }
       },
 
-      openDelete(u) {
-        this.deleteTarget = u;
+      openDelete(b) {
+        this.deleteTarget = b;
         this.showDelete = true;
       },
 
-      async deleteUser() {
+      async deleteMovie() {
         this.saving = true;
         try {
-          await api('DELETE', `/api/v1/users/${this.deleteTarget.id}`);
+          await api('DELETE', `/api/v1/movies/${this.deleteTarget.id}`);
           this.showDelete = false;
-          this.showToast("Foydalanuvchi o'chirildi", 'error');
-          this.loadUsers();
+          this.showToast("Film o'chirildi", 'error');
+          this.loadMovies();
         } finally {
           this.saving = false;
         }

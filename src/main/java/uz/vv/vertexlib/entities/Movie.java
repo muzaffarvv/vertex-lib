@@ -7,14 +7,14 @@ import uz.vv.vertexlib.base.BaseEntity;
 @Getter
 @Setter
 @Entity
-@Table(name = "books")
-public class Book extends BaseEntity {
+@Table(name = "movies")
+public class Movie extends BaseEntity {
 
     @Column(nullable = false, length = 172)
     private String title;
 
     @Column(unique = true,  nullable = false, length = 17)
-    private String isbn; // Xalqaro standart kitob raqami
+    private String isbn; // standart raqami
 
     @Column(nullable = false, length = 132)
     private String author;
@@ -23,11 +23,11 @@ public class Book extends BaseEntity {
     @JoinColumn(name = "genre_id")
     private Genres genre;
 
-    private Integer publishedYear; // Chop etilgan yil
+    private Integer publishedYear; // olingan yil
 
     @Column(nullable = false)
-    private Integer totalCopies; // Kutubxonada ushbu kitobdan jami nechta borligini ko'rsatadi
+    private Integer totalCopies; // Kinoteatrda ushbu kinodan jami nechta borligini ko'rsatadi
 
     @Column(nullable = false)
-    private Integer availableCopies; // aynan hozirda kutubxona javonida turgan (ijaraga berilmagan) nusxalar soni.
+    private Integer availableCopies; // aynan hozirda kinoteatr javonida turgan (ijaraga berilmagan) nusxalar soni.
 }

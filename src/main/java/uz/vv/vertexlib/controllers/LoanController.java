@@ -27,11 +27,11 @@ public class LoanController {
     }
 
     @PutMapping("/{id}/return")
-    public ResponseEntity<LoanResponse> returnBook(
+    public ResponseEntity<LoanResponse> returnMovie(
             @PathVariable String id,
             @Valid @RequestBody LoanUpdateRequest request
     ) {
-        return ResponseEntity.ok(loanService.returnBook(id, request));
+        return ResponseEntity.ok(loanService.returnMovie(id, request));
     }
 
     @GetMapping("/{id}")
