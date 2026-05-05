@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="/js/api.js"></script>
+    <script src="/static/js/api.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
 
@@ -65,19 +65,23 @@
 
         <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
             <p class="text-xs font-semibold text-slate-400 uppercase tracking-widest px-2 mb-2">Asosiy</p>
-            <a href="/dashboard" class="sidebar-link active">
+            <a href="/VertexLib/templates/dashboard.html" class="sidebar-link active">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
                 Dashboard
             </a>
-            <a href="/movies" class="sidebar-link">
+            <a href="/VertexLib/templates/movies.html" class="sidebar-link">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 16h4m10 0h4M4 4h16a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z"/></svg>
                 Filmlar
             </a>
-            <a href="/loans" class="sidebar-link">
+            <a href="/VertexLib/templates/genres.html" class="sidebar-link" id="nav-genres">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a2 2 0 012-2z"/></svg>
+                Janrlar
+            </a>
+            <a href="/VertexLib/templates/loans.html" class="sidebar-link">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 Ijaralar
             </a>
-            <a href="/users" class="sidebar-link">
+            <a href="/VertexLib/templates/users.html" class="sidebar-link">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
                 A'zolar
             </a>
