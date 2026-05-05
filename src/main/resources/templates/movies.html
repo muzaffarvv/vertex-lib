@@ -48,19 +48,23 @@
     </div>
     <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
       <p class="text-xs font-semibold text-slate-400 uppercase tracking-widest px-2 mb-2">Asosiy</p>
-      <a href="/dashboard" class="sidebar-link">
+      <a href="/VertexLib/templates/dashboard.html" class="sidebar-link ">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
         Dashboard
       </a>
-      <a href="/movies" class="sidebar-link active">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+      <a href="/VertexLib/templates/movies.html" class="sidebar-link active">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 16h4m10 0h4M4 4h16a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z"/></svg>
         Filmlar
       </a>
-      <a href="/loans" class="sidebar-link">
+      <a href="/VertexLib/templates/genres.html" class="sidebar-link" id="nav-genres">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a2 2 0 012-2z"/></svg>
+        Janrlar
+      </a>
+      <a href="/VertexLib/templates/loans.html" class="sidebar-link">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         Ijaralar
       </a>
-      <a href="/users" class="sidebar-link">
+      <a href="/VertexLib/templates/users.html" class="sidebar-link">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
         A'zolar
       </a>
@@ -411,7 +415,7 @@
       size: 15,
       searchQuery: '',
       pageRange: [],
-      isStaff: false,
+      isStaff: true,
       currentUserName: 'Admin',
 
       showCreate: false,
@@ -428,136 +432,54 @@
       toast: { visible: false, message: '', type: 'success' },
 
       async init() {
-        try {
-          const me = typeof currentUser !== 'undefined' ? currentUser : null;
-          if (me) {
-            this.currentUserName = me.fullName || me.username || 'Admin';
-            this.isStaff = me.role === 'STAFF' || me.role === 'ADMIN';
-          }
-        } catch(e) {}
-        await Promise.all([this.loadGenres(), this.loadMovies()]);
-      },
-
-      async loadGenres() {
-        try {
-          const res = await api('GET', '/api/v1/genres?size=200');
-          if (res && res.ok) {
-            this.genres = (await res.json()).content || [];
-          }
-        } catch(e) {}
+        await this.loadMovies();
       },
 
       async loadMovies() {
         this.loading = true;
-        try {
-          const res = await api('GET', `/api/v1/movies?page=${this.page}&size=${this.size}&sort=id,desc`);
-          if (!res || !res.ok) throw new Error();
-          const data = await res.json();
-          this.movies = data.content || [];
-          this.totalElements = data.totalElements || 0;
-          this.totalPages = data.totalPages || 1;
-          this.filterMovies();
-          this.buildPageRange();
-        } catch(e) {
-          this.movies = [];
-          this.displayMovies = [];
-        } finally {
-          this.loading = false;
-        }
+
+        // ✅ MOCK DATA
+        this.movies = [
+          { id: 1, title: 'Inception', author: 'Christopher Nolan', isbn: '978-1', genre: { id: 1, name: 'Sci-Fi' }, publishedYear: 2010, totalCopies: 5, availableCopies: 3 },
+          { id: 2, title: 'Interstellar', author: 'Christopher Nolan', isbn: '978-2', genre: { id: 1, name: 'Sci-Fi' }, publishedYear: 2014, totalCopies: 4, availableCopies: 2 },
+          { id: 3, title: 'The Dark Knight', author: 'Christopher Nolan', isbn: '978-3', genre: { id: 2, name: 'Action' }, publishedYear: 2008, totalCopies: 6, availableCopies: 1 },
+          { id: 4, title: 'The Matrix', author: 'Wachowski', isbn: '978-4', genre: { id: 1, name: 'Sci-Fi' }, publishedYear: 1999, totalCopies: 3, availableCopies: 0 },
+          { id: 5, title: 'Gladiator', author: 'Ridley Scott', isbn: '978-5', genre: { id: 2, name: 'Action' }, publishedYear: 2000, totalCopies: 4, availableCopies: 3 }
+        ];
+
+        this.totalElements = this.movies.length;
+        this.totalPages = 1;
+
+        this.filterMovies();
+        this.buildPageRange();
+
+        this.loading = false;
       },
 
       filterMovies() {
-        const q = (this.searchQuery || '').toLowerCase();
-        this.displayMovies = q
-                ? this.movies.filter(b =>
-                        (b.title || '').toLowerCase().includes(q) ||
-                        (b.author || '').toLowerCase().includes(q))
-                : [...this.movies];
+        const q = this.searchQuery.toLowerCase();
+        this.displayMovies = this.movies.filter(m =>
+                m.title.toLowerCase().includes(q) ||
+                m.author.toLowerCase().includes(q)
+        );
       },
 
       buildPageRange() {
-        const start = Math.max(0, this.page - 2);
-        const end = Math.min(this.totalPages - 1, this.page + 2);
-        this.pageRange = [];
-        for (let i = start; i <= end; i++) this.pageRange.push(i);
+        this.pageRange = [0];
       },
 
       goPage(p) {
-        if (p < 0 || p >= this.totalPages) return;
         this.page = p;
-        this.loadMovies();
       },
 
       openCreateModal() {
-        this.form = { title: '', isbn: '', author: '', genreId: '', publishedYear: '', totalCopies: '' };
-        this.createError = '';
         this.showCreate = true;
-      },
-
-      async createMovie() {
-        if (!this.form.title || !this.form.isbn || !this.form.author || !this.form.genreId) {
-          this.createError = "Barcha majburiy maydonlarni to'ldiring";
-          return;
-        }
-        this.saving = true;
-        try {
-          const body = {
-            title: this.form.title,
-            isbn: this.form.isbn,
-            author: this.form.author,
-            genreId: this.form.genreId,
-            publishedYear: parseInt(this.form.publishedYear) || null,
-            totalCopies: parseInt(this.form.totalCopies) || 0
-          };
-          const res = await api('POST', '/api/v1/movies', body);
-          if (!res || !res.ok) {
-            const err = await res.json().catch(() => ({}));
-            this.createError = err.message || 'Xatolik yuz berdi';
-            return;
-          }
-          this.showCreate = false;
-          this.showToast("Film muvaffaqiyatli qo'shildi");
-          this.loadMovies();
-        } finally {
-          this.saving = false;
-        }
       },
 
       openEdit(b) {
         this.editingId = b.id;
-        this.editForm = {
-          title: b.title || '',
-          author: b.author || '',
-          genreId: b.genre?.id || '',
-          publishedYear: b.publishedYear || '',
-          totalCopies: b.totalCopies ?? ''
-        };
-        this.editError = '';
+        this.editForm = { ...b };
         this.showEdit = true;
-      },
-
-      async updateMovie() {
-        this.saving = true;
-        try {
-          const body = {};
-          if (this.editForm.title) body.title = this.editForm.title;
-          if (this.editForm.author) body.author = this.editForm.author;
-          if (this.editForm.genreId) body.genreId = this.editForm.genreId;
-          if (this.editForm.publishedYear) body.publishedYear = parseInt(this.editForm.publishedYear);
-          if (this.editForm.totalCopies !== '') body.totalCopies = parseInt(this.editForm.totalCopies);
-
-          const res = await api('PATCH', `/api/v1/movies/${this.editingId}/details`, body);
-          if (!res || !res.ok) {
-            const err = await res.json().catch(() => ({}));
-            this.editError = err.message || 'Xatolik yuz berdi';
-            return;
-          }
-          this.showEdit = false;
-          this.showToast('Film yangilandi');
-          this.loadMovies();
-        } finally {
-          this.saving = false;
-        }
       },
 
       openDelete(b) {
@@ -565,21 +487,15 @@
         this.showDelete = true;
       },
 
-      async deleteMovie() {
-        this.saving = true;
-        try {
-          await api('DELETE', `/api/v1/movies/${this.deleteTarget.id}`);
-          this.showDelete = false;
-          this.showToast("Film o'chirildi", 'error');
-          this.loadMovies();
-        } finally {
-          this.saving = false;
-        }
+      deleteMovie() {
+        this.movies = this.movies.filter(m => m.id !== this.deleteTarget.id);
+        this.filterMovies();
+        this.showDelete = false;
       },
 
       showToast(message, type = 'success') {
         this.toast = { visible: true, message, type };
-        setTimeout(() => { this.toast.visible = false; }, 3000);
+        setTimeout(() => this.toast.visible = false, 3000);
       }
     }
   }

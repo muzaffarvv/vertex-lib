@@ -38,7 +38,6 @@ const MOCK_DATA = {
     ],
 
     users: [
-        { id: 1,  fullName: 'Admin Adminov',     phoneNumber: '998901234567', role: 'ADMIN',  createdAt: '2024-01-01' },
         { id: 2,  fullName: 'Jasur Toshmatov',   phoneNumber: '998901234568', role: 'MEMBER', createdAt: '2024-01-12' },
         { id: 3,  fullName: 'Malika Yusupova',   phoneNumber: '998901234569', role: 'STAFF',  createdAt: '2024-01-18' },
         { id: 4,  fullName: 'Bobur Rahimov',     phoneNumber: '998901234570', role: 'MEMBER', createdAt: '2024-02-03' },
@@ -66,12 +65,13 @@ const MOCK_DATA = {
     },
 };
 
-// currentUser — barcha sahifalar bunga murojaat qiladi
-const currentUser = {
-    id: 1,
-    fullName: 'Admin Adminov',
-    username: 'admin',
-    role: 'ADMIN',
+// currentUser layout.html da aniqlangan, shuning uchun bu yerdan olib tashladik.
+api.isAuthenticated = function() {
+    if (USE_MOCK) return true;
+    return !!localStorage.getItem('token');
+};
+api.clearToken = function() {
+    localStorage.removeItem('token');
 };
 
 // ─── Pageable wrapper ─────────────────────────────────────────────────────────
