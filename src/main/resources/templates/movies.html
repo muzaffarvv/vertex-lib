@@ -438,13 +438,18 @@
       async loadMovies() {
         this.loading = true;
 
-        // ✅ MOCK DATA
         this.movies = [
           { id: 1, title: 'Inception', author: 'Christopher Nolan', isbn: '978-1', genre: { id: 1, name: 'Sci-Fi' }, publishedYear: 2010, totalCopies: 5, availableCopies: 3 },
-          { id: 2, title: 'Interstellar', author: 'Christopher Nolan', isbn: '978-2', genre: { id: 1, name: 'Sci-Fi' }, publishedYear: 2014, totalCopies: 4, availableCopies: 2 },
-          { id: 3, title: 'The Dark Knight', author: 'Christopher Nolan', isbn: '978-3', genre: { id: 2, name: 'Action' }, publishedYear: 2008, totalCopies: 6, availableCopies: 1 },
+          { id: 2, title: 'Pulp Fiction', author: 'Quentin Tarantino', isbn: '978-7', genre: { id: 11, name: 'Crime' }, publishedYear: 1994, totalCopies: 4, availableCopies: 1 },
           { id: 4, title: 'The Matrix', author: 'Wachowski', isbn: '978-4', genre: { id: 1, name: 'Sci-Fi' }, publishedYear: 1999, totalCopies: 3, availableCopies: 0 },
-          { id: 5, title: 'Gladiator', author: 'Ridley Scott', isbn: '978-5', genre: { id: 2, name: 'Action' }, publishedYear: 2000, totalCopies: 4, availableCopies: 3 }
+          { id: 5, title: 'Gladiator', author: 'Ridley Scott', isbn: '978-5', genre: { id: 2, name: 'Action' }, publishedYear: 2000, totalCopies: 4, availableCopies: 3 },
+          { id: 6, title: 'Titanic', author: 'James Cameron', isbn: '978-6', genre: { id: 9, name: 'Romantic' }, publishedYear: 1997, totalCopies: 5, availableCopies: 2 },
+          { id: 7, title: 'Interstellar', author: 'Christopher Nolan', isbn: '978-2', genre: { id: 1, name: 'Sci-Fi' }, publishedYear: 2014, totalCopies: 4, availableCopies: 2 },
+          { id: 8, title: 'The Shawshank Redemption', author: 'Frank Darabont', isbn: '978-8', genre: { id: 3, name: 'Drama' }, publishedYear: 1994, totalCopies: 6, availableCopies: 4 },
+          { id: 9, title: 'Avatar', author: 'James Cameron', isbn: '978-9', genre: { id: 1, name: 'Sci-Fi' }, publishedYear: 2009, totalCopies: 5, availableCopies: 3 },
+          { id: 10, title: 'The Godfather', author: 'Francis Ford Coppola', isbn: '978-10', genre: { id: 11, name: 'Crime' }, publishedYear: 1972, totalCopies: 4, availableCopies: 2 },
+          { id: 11, title: 'Forrest Gump', author: 'Robert Zemeckis', isbn: '978-11', genre: { id: 3, name: 'Drama' }, publishedYear: 1994, totalCopies: 5, availableCopies: 3 },
+          { id: 12, title: 'Spirited Away', author: 'Hayao Miyazaki', isbn: '978-12', genre: { id: 13, name: 'Animation' }, publishedYear: 2001, totalCopies: 3, availableCopies: 2 }
         ];
 
         this.totalElements = this.movies.length;
