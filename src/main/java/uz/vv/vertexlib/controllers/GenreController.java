@@ -11,7 +11,6 @@ import uz.vv.vertexlib.dtos.requests.GenreRequest;
 import uz.vv.vertexlib.dtos.responses.GenreResponse;
 import uz.vv.vertexlib.services.GenreService;
 
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/genres")

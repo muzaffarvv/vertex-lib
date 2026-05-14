@@ -34,7 +34,6 @@ const MOCK_DATA = {
         { id: 9,  title: 'The Matrix',               director: 'Wachowski Sisters',  isbn: '978-0-00-009-7', genre: { id: '3', name: 'Sci-Fi' },    publishedYear: 1999, totalCopies: 4, availableCopies: 0, author: 'Wachowski Sisters' },
         { id: 10, title: 'Gladiator',                director: 'Ridley Scott',       isbn: '978-0-00-010-3', genre: { id: '1', name: 'Action' },    publishedYear: 2000, totalCopies: 3, availableCopies: 2, author: 'Ridley Scott'      },
         { id: 11, title: "Schindler's List",         director: 'Steven Spielberg',   isbn: '978-0-00-011-0', genre: { id: '2', name: 'Drama' },     publishedYear: 1993, totalCopies: 3, availableCopies: 3, author: 'Steven Spielberg'  },
-        { id: 12, title: 'The Lion King',            director: 'Roger Allers',       isbn: '978-0-00-012-7', genre: { id: '9', name: 'Animation' }, publishedYear: 1994, totalCopies: 6, availableCopies: 5, author: 'Roger Allers'      },
     ],
 
     users: [
